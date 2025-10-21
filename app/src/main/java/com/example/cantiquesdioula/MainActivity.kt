@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+// import android.widget.EditText // On n'a plus besoin de cet import
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -28,8 +29,6 @@ class MainActivity : AppCompatActivity() {
 
         // Afficher le fragment d'accueil au démarrage
         if (savedInstanceState == null) {
-            // --- CORRECTION ICI ---
-            // On utilise la ressource string au lieu d'un texte fixe
             loadFragment(HomeFragment(), getString(R.string.app_name))
         }
 
@@ -40,7 +39,6 @@ class MainActivity : AppCompatActivity() {
 
             when (item.itemId) {
                 R.id.nav_home -> {
-                    // --- CORRECTION ICI ---
                     loadFragment(HomeFragment(), getString(R.string.app_name))
                 }
                 R.id.nav_categories -> {
@@ -53,10 +51,16 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
+        // Appel de la fonction de configuration
         setupSearch(searchView)
     }
 
     private fun setupSearch(searchView: SearchView) {
+
+        // --- LES 2 LIGNES POUR L'ICÔNE À DROITE ONT ÉTÉ SUPPRIMÉES D'ICI ---
+        // C'est maintenant plus propre.
+
+        // Votre code existant pour le filtrage (on le garde !)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
             override fun onQueryTextChange(newText: String?): Boolean {

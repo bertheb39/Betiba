@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CantiquesDioula">
         <activity
+            android:name=".SongPagerActivity"
+            android:exported="false" />
+        <activity
             android:name=".SongListActivity"
             android:exported="false" />
         <activity
