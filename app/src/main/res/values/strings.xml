@@ -2,4 +2,5 @@
     <string name="app_name">Cantiques en Dioula</string>
     <string name="error_title">Erreur</string>
     <string name="error_loading_song">Impossible de charger le cantique.</string>
+    <string name="menu_update">Mettre à jour l\'application</string>
 </resources>

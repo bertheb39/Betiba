@@ -4,8 +4,10 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="rouge_principal">#660000</color>
-
     <color name="rouge_fonce">#4c0000</color>
-
     <color name="accent_day">#D81B60</color>
+
+    <color name="icon_tint_normal">#FFFFFFFF</color>
+    <color name="icon_tint_mastered">#FF4CAF50</color>
+
 </resources>
