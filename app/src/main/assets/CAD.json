@@ -5768,28 +5768,63 @@
         }
       ]
     },
+{
+  "ID": 216,
+  "Text": "O ka di Yesu ye",
+  "Verses": [
     {
-      "ID": 216,
-      "Text": "O ka di Yesu ye",
-      "Verses": [
-        {
-          "Text": "(Cɛw) \t\t\t(Musow)\nO ka di Yesu ye (2) \tO man di Yesu ye (2)\nKa Ala bato \t\tKa joo sɔn\nO ka di Yesu ye \tO man di Yesu ye"
-        },
-        {
-          "Text": "O ka di Yesu ye (2) \tO man di Yesu ye (2)\nKa Ala dali \t\tKa jinɛw dali\nO ka di Yesu ye \tO man di Yesu ye"
-        },
-        {
-          "Text": "O ka di Yesu ye (2) \tO man di Yesu ye (2)\nKa Ala tanu \t\tKa kira bato\nO ka di Yesu ye \tO man di Yesu ye"
-        },
-        {
-          "Text": "O ka di Yesu ye (2) \tO man di Yesu ye (2)\nKa Ala sago kɛ \t\tKa Ala tɔgɔ cɛn\nO ka di Yesu ye \tO man di Yesu ye"
-        },
-        {
-          "Text": "O ka di Yesu ye (2) \tO man di Yesu ye (2)\nKa sankolo sɔrɔ \tKa dinyɛ kanu\nO ka di Yesu ye \tO man di Yesu ye"
-        }
+      "Lines": [
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye (2)" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye (2)" },
+        { "Speaker": "Cɛw", "Line": "Ka Ala bato" },
+        { "Speaker": "Musow", "Line": "Ka joo sɔn" },
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye" }
       ]
     },
     {
+      "Lines": [
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye (2)" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye (2)" },
+        { "Speaker": "Cɛw", "Line": "Ka Ala dali" },
+        { "Speaker": "Musow", "Line": "Ka jinɛw dali" },
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye" }
+      ]
+    },
+    {
+      "Lines": [
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye (2)" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye (2)" },
+        { "Speaker": "Cɛw", "Line": "Ka Ala tanu" },
+        { "Speaker": "Musow", "Line": "Ka kira bato" },
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye" }
+      ]
+    },
+    {
+      "Lines": [
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye (2)" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye (2)" },
+        { "Speaker": "Cɛw", "Line": "Ka Ala sago kɛ" },
+        { "Speaker": "Musow", "Line": "Ka Ala tɔgɔ cɛn" },
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye" }
+      ]
+    },
+    {
+      "Lines": [
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye (2)" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye (2)" },
+        { "Speaker": "Cɛw", "Line": "Ka sankolo sɔrɔ" },
+        { "Speaker": "Musow", "Line": "Ka dinyɛ kanu" },
+        { "Speaker": "Cɛw", "Line": "O ka di Yesu ye" },
+        { "Speaker": "Musow", "Line": "O man di Yesu ye" }
+      ]
+    }
+  ]
+}, 
+  {
       "ID": 217,
       "Text": "Ka Yesu to dinyɛ na, a tugura Ala nɔ",
       "Verses": [
