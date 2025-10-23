@@ -1,14 +1,15 @@
 package com.example.cantiquesdioula
 
+import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
-import kotlinx.parcelize.Parcelize // Ajoutez cet import
-import android.os.Parcelable // Ajoutez cet import
+import kotlinx.parcelize.Parcelize
 
-// Pour le JSON principal des cantiques
+// Classe pour parser le JSON principal
 data class SongData(
     @SerializedName("Songs") val songs: List<Song>
 )
 
+// Classe pour un cantique
 @Parcelize
 data class Song(
     @SerializedName("ID") val id: Int,
@@ -16,13 +17,35 @@ data class Song(
     @SerializedName("Verses") val verses: List<Verse>
 ) : Parcelable
 
+// Classe pour un verset
 @Parcelize
 data class Verse(
-    @SerializedName("Text") val text: String,
-    @SerializedName("IsDisplayed") val isDisplayed: Int? = 0
-): Parcelable
+    // 'text' est nullable (peut être absent)
+    @SerializedName("Text") val text: String?,
 
-// Pour la liste dans l'écran Menu
-data class MenuItemData(val title: String, val iconResId: Int)
+    // 'isDisplayed' est nullable (peut être absent)
+    @SerializedName("IsDisplayed") val isDisplayed: Int?,
 
-data class Category(val name: String, val songs: List<Song> = emptyList())
+    // 'lines' est nullable (pour le cantique 216)
+    @SerializedName("Lines") val lines: List<SongLine>?
+
+) : Parcelable
+
+// Classe pour les lignes spéciales du cantique 216
+@Parcelize
+data class SongLine(
+    @SerializedName("Speaker") val speaker: String,
+    @SerializedName("Line") val line: String
+) : Parcelable
+
+// Classe pour une catégorie (pour l'onglet Catégories)
+data class Category(
+    val name: String,
+    val songs: List<Song>
+)
+
+// Classe pour un item du menu (pour l'onglet Menu)
+data class MenuItemData(
+    val title: String,
+    val iconResId: Int
+)

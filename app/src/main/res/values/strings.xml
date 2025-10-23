@@ -3,4 +3,5 @@
     <string name="error_title">Erreur</string>
     <string name="error_loading_song">Impossible de charger le cantique.</string>
     <string name="menu_update">Mettre à jour l\'application</string>
+    <string name="app_footer_name">Bεtiba - Cantiques en Dioula</string>
 </resources>

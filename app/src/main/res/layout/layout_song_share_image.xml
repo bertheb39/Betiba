@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/rouge_principal"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/share_image_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+
+        android:maxLines="3"
+
+        tools:text="1: An ka lajɛn ka Yesu bato" />
+
+    <TextView
+        android:id="@+id/share_image_lyrics"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:lineSpacingExtra="4dp"
+        android:maxLines="10"
+        android:ellipsize="end"
+        android:gravity="center"
+        tools:text="An ka lajɛn ka Yesu bato,\nO min sɔnna ka na dinyɛ na\nAn ka lajɛn ka Yesu bato,\nO min sɔnna ka na dinyɛ na" />
+
+    <TextView
+        android:id="@+id/share_image_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:text="@string/app_footer_name" />
+
+</LinearLayout>
