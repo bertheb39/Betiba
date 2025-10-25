@@ -11,8 +11,13 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 class MenuFragment : Fragment() {
+
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -20,86 +25,99 @@ class MenuFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_menu, container, false)
 
-        val menuItems = listOf(
-            MenuItemData("Paramètres", R.drawable.ic_settings),
-            MenuItemData("Favoris", R.drawable.ic_favorite_filled),
-            MenuItemData("Cantiques maîtrisés", R.drawable.ic_check_circle),
+        auth = Firebase.auth
+        val menuItems = mutableListOf<MenuItemData>()
 
-            // --- AJOUT 1: Le nouvel item de menu ---
-            // (Assurez-vous que R.string.menu_update et R.drawable.ic_menu_update existent)
-            MenuItemData(getString(R.string.menu_update), R.drawable.ic_menu_update),
-            // --- Fin de l'ajout ---
+        // Vérifie si l'utilisateur est connecté
+        if (auth.currentUser == null) {
+            menuItems.add(MenuItemData(getString(R.string.menu_login), R.drawable.ic_menu_login))
+        }
 
-            MenuItemData("Partager l'application", R.drawable.ic_share),
-            MenuItemData("Commentaires et avis", R.drawable.ic_rate_review),
-            MenuItemData("Faire un don", R.drawable.ic_donate),
-            MenuItemData("À propos", R.drawable.ic_info),
-            MenuItemData("Contactez-nous", R.drawable.ic_contact)
-        )
+        // Ajouter le reste des boutons
+        menuItems.add(MenuItemData(getString(R.string.menu_settings), R.drawable.ic_settings))
+        menuItems.add(MenuItemData(getString(R.string.menu_favorites), R.drawable.ic_favorite_filled))
+        menuItems.add(MenuItemData(getString(R.string.menu_mastered), R.drawable.ic_check_circle))
+        menuItems.add(MenuItemData(getString(R.string.menu_update), R.drawable.ic_menu_update))
+        menuItems.add(MenuItemData(getString(R.string.menu_share_app), R.drawable.ic_share))
+        menuItems.add(MenuItemData(getString(R.string.menu_rate_review), R.drawable.ic_rate_review))
+        menuItems.add(MenuItemData(getString(R.string.menu_donate), R.drawable.ic_donate))
+        menuItems.add(MenuItemData(getString(R.string.menu_about), R.drawable.ic_info))
+        menuItems.add(MenuItemData(getString(R.string.menu_contact), R.drawable.ic_contact))
+
+        // Si l'utilisateur est connecté, ajouter le bouton de déconnexion à la fin
+        if (auth.currentUser != null) {
+            menuItems.add(MenuItemData(getString(R.string.menu_logout), R.drawable.ic_menu_logout))
+        }
 
         val recyclerView: RecyclerView = view.findViewById(R.id.menu_recyclerview)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         recyclerView.adapter = MenuAdapter(menuItems) { selectedItem ->
             when (selectedItem.title) {
-                "Paramètres" -> {
+                getString(R.string.menu_login) -> {
+                    startActivity(Intent(requireContext(), AuthActivity::class.java))
+                }
+                getString(R.string.menu_logout) -> {
+                    auth.signOut()
+                    // Vider les caches locaux
+                    FavoritesManager.clearFavoritesOnLogout(requireContext())
+                    MasteredManager.clearMasteredOnLogout(requireContext())
+
+                    Toast.makeText(requireContext(), "Déconnexion réussie.", Toast.LENGTH_SHORT).show()
+                    // Redémarrer l'application pour rafraîchir le menu
+                    val intent = Intent(requireContext(), MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                }
+                getString(R.string.menu_settings) -> {
                     startActivity(Intent(requireContext(), SettingsActivity::class.java))
                 }
-                "Favoris" -> {
+                getString(R.string.menu_favorites) -> {
                     val intent = Intent(requireContext(), SongListActivity::class.java).apply {
                         putExtra("LIST_TYPE", "FAVORITES")
                     }
                     startActivity(intent)
                 }
-                "Cantiques maîtrisés" -> {
+                getString(R.string.menu_mastered) -> {
                     val intent = Intent(requireContext(), SongListActivity::class.java).apply {
                         putExtra("LIST_TYPE", "MASTERED")
                     }
                     startActivity(intent)
                 }
-                "À propos" -> {
+                getString(R.string.menu_about) -> {
                     startActivity(Intent(requireContext(), AboutActivity::class.java))
                 }
-                "Faire un don" -> {
+                getString(R.string.menu_donate) -> {
                     startActivity(Intent(requireContext(), DonateActivity::class.java))
                 }
-                "Contactez-nous" -> {
+                getString(R.string.menu_contact) -> {
                     startActivity(Intent(requireContext(), ContactActivity::class.java))
                 }
-                "Commentaires et avis" -> {
+                getString(R.string.menu_rate_review) -> {
                     openAppInPlayStore()
                 }
-                "Partager l'application" -> {
+                getString(R.string.menu_share_app) -> {
                     shareApplication()
                 }
-
-                // --- AJOUT 2: La logique de clic pour le nouvel item ---
                 getString(R.string.menu_update) -> {
-                    openAppInPlayStore() // On réutilise la même fonction
+                    openAppInPlayStore()
                 }
-                // --- Fin de l'ajout ---
             }
         }
 
         return view
     }
 
-    // --- Votre fonction existante (parfaite pour la mise à jour) ---
     private fun openAppInPlayStore() {
-        // Remplacez "com.example.cantiquesdioula" par votre véritable ID d'application quand elle sera publiée
-        val packageName = "com.example.cantiquesdioula" // TODO: Mettre à jour si nécessaire
+        val packageName = "com.example.cantiquesdioula"
         try {
-            // Essaie d'ouvrir directement dans l'application Play Store
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")))
         } catch (e: ActivityNotFoundException) {
-            // Si le Play Store n'est pas installé, ouvre dans le navigateur web
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName")))
         }
     }
 
-    // --- Votre fonction existante ---
     private fun shareApplication() {
-        // TODO: Mettre à jour l'URL avec votre vrai lien Play Store
         val shareText = "Découvrez l'application Cantiques Dioula ! Une collection complète de chants spirituels. Téléchargez-la ici : https://play.google.com/store/apps/details?id=com.example.cantiquesdioula"
 
         val intent = Intent(Intent.ACTION_SEND).apply {

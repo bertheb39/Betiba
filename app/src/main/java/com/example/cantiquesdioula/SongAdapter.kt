@@ -18,13 +18,13 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
     private var songListFull: List<Song> = ArrayList(songs)
 
     class SongViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // --- CORRECTION IDs --- (J'utilise les IDs de votre code)
+        // J'utilise les IDs de votre code
         val songNumber: TextView = itemView.findViewById(R.id.song_number)
         val songTitle: TextView = itemView.findViewById(R.id.song_title)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
-        // --- CORRECTION Layout --- (J'utilise le layout de votre code)
+        // J'utilise le layout de votre code
         val view = LayoutInflater.from(parent.context).inflate(R.layout.list_item_song, parent, false)
         return SongViewHolder(view)
     }
@@ -33,9 +33,6 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
         val song = songs[position]
         val context = holder.itemView.context // Récupérer le contexte
 
-        // --- CORRECTION Affichage --- (J'utilise la logique de votre code)
-        // Note: Est-ce que song.id est vraiment le numéro du cantique ?
-        // Si vous avez une propriété 'number' dans Song, utilisez-la.
         holder.songNumber.text = song.id.toString()
         holder.songTitle.text = song.title.replace("\n", " ").trim()
 
@@ -43,36 +40,47 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
         val savedFontSize = SettingsManager.getFontSize(context)
         holder.songTitle.textSize = savedFontSize - 2f
 
-        // --- DÉBUT DE LA MODIFICATION POUR LE PAGER ---
+        // --- Logique de Clic (votre code) ---
         holder.itemView.setOnClickListener {
-            // 1. Créer l'Intent pour SongPagerActivity
             val intent = Intent(context, SongPagerActivity::class.java)
 
-            // 2. Déterminer quelle liste passer (filtrée ou complète)
-            // Pour le swipe, il est souvent mieux de passer la liste COMPLÈTE
-            // même si l'affichage actuel est filtré.
-            val listToPass = ArrayList(songListFull) // On passe TOUJOURS la liste complète
+            // On passe TOUJOURS la liste complète
+            val listToPass = ArrayList(songListFull)
 
-            // 3. Trouver la VRAIE position dans la liste complète
-            // car 'position' est relatif à la liste filtrée 'songs'
+            // Trouver la VRAIE position dans la liste complète
             val originalPosition = songListFull.indexOf(song)
-            val positionToPass = if (originalPosition != -1) originalPosition else 0 // Sécurité
+            val positionToPass = if (originalPosition != -1) originalPosition else 0
 
-            // 4. Mettre la liste complète et la position dans l'Intent
+            // Mettre la liste complète et la position dans l'Intent
             intent.putParcelableArrayListExtra(EXTRA_SONGS_LIST, listToPass)
             intent.putExtra(EXTRA_CURRENT_SONG_POSITION, positionToPass)
 
-            // 5. Démarrer l'activité Pager
             context.startActivity(intent)
         }
-        // --- FIN DE LA MODIFICATION POUR LE PAGER ---
     }
 
     fun updateList(newList: List<Song>) {
         songs = ArrayList(newList)
-        songListFull = ArrayList(newList) // Mettre à jour la liste complète aussi
+        // Mettre à jour la liste complète SEULEMENT si la nouvelle liste est la liste complète
+        // Pour le filtre, songListFull ne doit pas changer.
+        if (songs.size > songListFull.size) { // Simple heuristique
+            songListFull = ArrayList(newList)
+        } else if (songs.isEmpty() && songListFull.isNotEmpty()) {
+            // cas spécial: la liste filtrée est vide
+        } else if (songListFull.isEmpty()) {
+            songListFull = ArrayList(newList)
+        }
+
         notifyDataSetChanged()
     }
+
+    // S'assurer que la liste complète est bien à jour quand on crée l'adaptateur
+    fun setFullList(fullList: List<Song>) {
+        songListFull = ArrayList(fullList)
+        songs = ArrayList(fullList) // Au début, la liste affichée est la liste complète
+        notifyDataSetChanged()
+    }
+
 
     override fun getItemCount(): Int = songs.size
 
@@ -89,9 +97,8 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
             } else {
                 val filterPattern = constraint.toString().lowercase(Locale.getDefault()).trim()
                 for (song in songListFull) {
-                    // Vérifiez si votre classe Song a bien une propriété 'id' et 'title'
                     if (song.title.lowercase(Locale.getDefault()).contains(filterPattern) ||
-                        song.id.toString().contains(filterPattern)) { // Assurez-vous que 'id' est le bon champ pour la recherche par numéro
+                        song.id.toString().contains(filterPattern)) {
                         filteredList.add(song)
                     }
                 }
@@ -101,11 +108,18 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
             return results
         }
 
+        @Suppress("UNCHECKED_CAST")
         override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-            // Attention: Ne pas écraser songListFull ici
-            val newFilteredList = results?.values as? List<Song> ?: emptyList()
-            songs = newFilteredList // Mettre à jour seulement la liste affichée
+            // Mettre à jour seulement la liste affichée
+            songs = results?.values as? List<Song> ?: emptyList()
             notifyDataSetChanged()
         }
     }
+
+    // --- AJOUT : Constantes Manquantes ---
+    companion object {
+        const val EXTRA_SONGS_LIST = "SONG_LIST"
+        const val EXTRA_CURRENT_SONG_POSITION = "CURRENT_POSITION"
+    }
+    // --- FIN DE L'AJOUT ---
 }

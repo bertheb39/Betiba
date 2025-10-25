@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("kotlin-parcelize")
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -38,16 +39,33 @@ android {
 
 dependencies {
 
+    // Importer la "Bill of Materials" (BOM) de Firebase
+    // Cela gère automatiquement les versions de TOUTES les bibliothèques Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+
     // Pour lire et convertir facilement les données JSON
     implementation("com.google.code.gson:gson:2.10.1")
 
-// Pour les composants graphiques modernes de Material Design
-    implementation("com.google.android.material:material:1.12.0")
+    // Pour les composants graphiques modernes de Material Design
+    implementation("com.google.android.material:material:1.13.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // --- CORRECTION FINALE DE FIREBASE ---
+    // 1. On supprime l'ancienne ligne 'implementation(libs.firebase.auth)'
+    // 2. On ajoute les deux bibliothèques SANS version (la BOM s'en occupe)
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    // --- FIN CORRECTION ---
+
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

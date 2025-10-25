@@ -1,5 +1,6 @@
 package com.example.cantiquesdioula
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -20,19 +21,24 @@ class SongListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_song_list)
 
+        // --- CORRIGÉ : Utilisation des bons IDs ---
         val toolbar: Toolbar = findViewById(R.id.song_list_toolbar)
+        recyclerView = findViewById(R.id.song_list_recycler_view)
+        // --- FIN CORRECTION ---
+
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true) // Affiche la flèche de retour
 
         listType = intent.getStringExtra("LIST_TYPE")
-        recyclerView = findViewById(R.id.song_list_recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         allSongs = loadSongsFromAssets()
 
-        // Initialiser l'adaptateur avec une liste vide pour l'instant
+        // --- CORRIGÉ : Initialisation de votre adaptateur ---
+        // On l'initialise vide, car on le met à jour dans onResume
         songAdapter = SongAdapter(listOf())
         recyclerView.adapter = songAdapter
+        // --- FIN CORRECTION ---
     }
 
     // Cette fonction est appelée chaque fois que l'écran redevient visible
@@ -43,15 +49,27 @@ class SongListActivity : AppCompatActivity() {
     }
 
     private fun updateContent() {
-        var songsToShow: List<Song> = listOf()
+        val songsToShow: List<Song>
         if (listType == "FAVORITES") {
-            supportActionBar?.title = "Favoris"
-            songsToShow = FavoritesManager.getFavoriteSongs(this, allSongs)
+            supportActionBar?.title = getString(R.string.menu_favorites)
+            // --- CORRECTION : Nouvelle logique de filtrage Firebase ---
+            songsToShow = allSongs.filter { FavoritesManager.isFavorite(it.id) }
+            // --- FIN CORRECTION ---
         } else if (listType == "MASTERED") {
-            supportActionBar?.title = "Cantiques maîtrisés"
-            songsToShow = MasteredManager.getMasteredSongs(this, allSongs)
+            supportActionBar?.title = getString(R.string.menu_mastered)
+            // --- CORRECTION : Nouvelle logique de filtrage Firebase ---
+            songsToShow = allSongs.filter { MasteredManager.isMastered(it.id) }
+            // --- FIN CORRECTION ---
+        } else {
+            songsToShow = allSongs // Par sécurité
         }
-        songAdapter.updateList(songsToShow)
+
+        // --- CORRECTION : Utilisation de votre méthode setFullList ---
+        // On passe la liste filtrée pour l'affichage
+        // et on dit à l'adaptateur quelle est la "vraie" liste complète
+        // pour que le clic vers le Pager fonctionne.
+        songAdapter.setFullList(allSongs) // Important pour le Pager
+        songAdapter.updateList(songsToShow) // Affiche la liste filtrée
     }
 
     // Gère le clic sur la flèche de retour

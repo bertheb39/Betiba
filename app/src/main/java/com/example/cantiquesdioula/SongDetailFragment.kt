@@ -20,7 +20,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
-import com.example.cantiquesdioula.SongLine // <<< L'IMPORT EST ICI
+import com.example.cantiquesdioula.SongLine
 import java.io.File
 import java.io.FileOutputStream
 
@@ -78,26 +78,20 @@ class SongDetailFragment : Fragment() {
 
                 val formattedVerse: String
 
-                // Vérifie d'abord s'il y a des "Lines" (pour le cantique 216)
                 if (verse.lines != null && verse.lines.isNotEmpty()) {
-                    // Cas spécial pour le cantique 216 (format Cɛw/Musow)
                     val linesHtml = verse.lines.joinToString(separator = "<br>") { songLine: SongLine ->
                         "&nbsp;&nbsp;&nbsp;&nbsp;<i><b>${songLine.speaker}:</b> ${songLine.line}</i>"
                     }
                     formattedVerse = linesHtml
-
                 } else {
-                    // Cas normal pour tous les autres cantiques
                     val verseText = (verse.text ?: "").trim()
-
                     val textWithHtmlBreaks = verseText
                         .replace("\r\n", "<br>")
                         .replace("\r", "<br>")
                         .replace("\n", "<br>")
-
-                    if (verse.isDisplayed == 0) { // Refrain
+                    if (verse.isDisplayed == 0) {
                         formattedVerse = "<b><i>$textWithHtmlBreaks</i></b>"
-                    } else { // Couplet normal
+                    } else {
                         formattedVerse = textWithHtmlBreaks
                     }
                 }
@@ -114,8 +108,10 @@ class SongDetailFragment : Fragment() {
             val savedFontSize = SettingsManager.getFontSize(requireContext())
             contentTextView.textSize = savedFontSize
 
-            isFavorite = FavoritesManager.isFavorite(requireContext(), currentSong.id)
-            isMastered = MasteredManager.isMastered(requireContext(), currentSong.id)
+            // --- CORRIGÉ : Utilise le cache local (plus besoin de 'context') ---
+            isFavorite = FavoritesManager.isFavorite(currentSong.id)
+            isMastered = MasteredManager.isMastered(currentSong.id)
+            // --- FIN CORRECTION ---
 
         } ?: run {
             toolbarDisplayText = getString(R.string.error_title)
@@ -160,9 +156,12 @@ class SongDetailFragment : Fragment() {
 
     private fun handleFavoriteClick() {
         song?.let { currentSong ->
+            // --- CORRIGÉ : Appelle le nouveau manager ---
             FavoritesManager.toggleFavorite(requireContext(), currentSong.id)
-            isFavorite = !isFavorite
-            requireActivity().invalidateMenu() // Force le menu à se redessiner
+            isFavorite = FavoritesManager.isFavorite(currentSong.id) // Lire la nouvelle valeur
+            // --- FIN CORRECTION ---
+
+            requireActivity().invalidateMenu()
             val message = if (isFavorite) "Ajouté aux favoris" else "Retiré des favoris"
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
@@ -170,9 +169,12 @@ class SongDetailFragment : Fragment() {
 
     private fun handleMasteredClick() {
         song?.let { currentSong ->
+            // --- CORRIGÉ : Appelle le nouveau manager ---
             MasteredManager.toggleMastered(requireContext(), currentSong.id)
-            isMastered = !isMastered
-            requireActivity().invalidateMenu() // Force le menu à se redessiner
+            isMastered = MasteredManager.isMastered(currentSong.id) // Lire la nouvelle valeur
+            // --- FIN CORRECTION ---
+
+            requireActivity().invalidateMenu()
             val message = if (isMastered) "Marqué comme maîtrisé" else "Marque 'maîtrisé' retirée"
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
@@ -199,7 +201,7 @@ class SongDetailFragment : Fragment() {
         val options = arrayOf("Partager le texte complet", "Partager un couplet en image")
 
         AlertDialog.Builder(context)
-            .setTitle("Choisir une option de partage")
+            .setTitle("Partager le cantique")
             .setItems(options) { dialog, which ->
                 when (which) {
                     0 -> { // Option 1: Texte complet
@@ -213,7 +215,7 @@ class SongDetailFragment : Fragment() {
             .show()
     }
 
-    // Partage le texte (ancienne logique)
+    // Partage le texte
     private fun shareSongAsText() {
         song?.let { currentSong ->
             try {
@@ -315,7 +317,6 @@ class SongDetailFragment : Fragment() {
         }
         lyricsTextView.text = verseText
 
-        // Correction de la mesure pour le retour à la ligne
         val width = 1440
         val widthMeasureSpec = View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY)
         val heightMeasureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)

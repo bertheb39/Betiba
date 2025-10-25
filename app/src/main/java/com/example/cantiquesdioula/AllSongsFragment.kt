@@ -13,12 +13,24 @@ import java.io.InputStreamReader
 class AllSongsFragment : Fragment(), FilterableFragment {
     private lateinit var songAdapter: SongAdapter
 
+    // --- AJOUT : Rendre la liste de cantiques "static" (accessible partout) ---
+    // C'est notre "source de vérité" unique pour la liste des cantiques.
+    companion object {
+        var allSongsList: List<Song> = emptyList()
+    }
+    // --- FIN DE L'AJOUT ---
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_all_songs, container, false)
         val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_all_songs)
 
-        val allSongs = loadSongsFromAssets()
-        songAdapter = SongAdapter(allSongs)
+        // --- MODIFIÉ : Charger la liste une seule fois ---
+        if (allSongsList.isEmpty()) {
+            allSongsList = loadSongsFromAssets()
+        }
+        // --- FIN DE LA MODIFICATION ---
+
+        songAdapter = SongAdapter(allSongsList)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = songAdapter
 
@@ -31,11 +43,11 @@ class AllSongsFragment : Fragment(), FilterableFragment {
         }
     }
 
-    // --- AJOUT DE LA FONCTION DE RAFRAÎCHISSEMENT ---
     fun refreshList() {
         if (::songAdapter.isInitialized && isAdded) {
-            val allSongs = loadSongsFromAssets()
-            songAdapter.updateList(allSongs)
+            // Pas besoin de recharger depuis les assets,
+            // il suffit de notifier l'adaptateur que les données (favoris) ont changé.
+            songAdapter.notifyDataSetChanged()
         }
     }
 

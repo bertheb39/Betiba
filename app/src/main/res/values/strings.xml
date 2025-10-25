@@ -1,7 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cantiques en Dioula</string>
     <string name="error_title">Erreur</string>
     <string name="error_loading_song">Impossible de charger le cantique.</string>
-    <string name="menu_update">Mettre à jour l\'application</string>
     <string name="app_footer_name">Bεtiba - Cantiques en Dioula</string>
+    <string name="auth_or">OU</string>
+
+    <string name="nav_categories">Catégories</string>
+    <string name="nav_menu">Menu</string>
+
+    <string name="menu_login">Connexion / Inscription</string>
+    <string name="menu_settings">Paramètres</string>
+    <string name="menu_favorites">Favoris</string>
+    <string name="menu_mastered">Cantiques maîtrisés</string>
+    <string name="menu_update">Mettre à jour l\'application</string>
+    <string name="menu_share_app">Partager l\'application</string>
+    <string name="menu_rate_review">Commentaires et avis</string>
+    <string name="menu_donate">Faire un don</string>
+    <string name="menu_about">À propos</string>
+    <string name="menu_contact">Contactez-nous</string>
+
+    <string name="auth_login_title">Connexion</string>
+    <string name="auth_email_or_phone_hint">E-mail ou N° de téléphone</string>
+    <string name="auth_password_hint">Mot de passe</string>
+    <string name="auth_login_button">Se connecter</string>
+    <string name="auth_forgot_password">Mot de passe oublié ?</string>
+    <string name="auth_no_account">Je n\'ai pas de compte. S\'inscrire</string>
+
+    <string name="register_title">Inscription</string>
+    <string name="register_email_hint">Adresse e-mail</string>
+    <string name="register_password_hint">Mot de passe (6+ caractères)</string>
+    <string name="register_confirm_password_hint">Confirmer le mot de passe</string>
+    <string name="register_button">S\'inscrire</string>
+    <string name="register_phone_button">S\'inscrire avec un n° de téléphone</string>
+    <string name="register_already_have_account">J\'ai déjà un compte. Se connecter</string>
+    <string name="menu_logout">Se déconnecter</string>
+
 </resources>
