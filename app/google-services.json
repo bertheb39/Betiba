@@ -12,7 +12,16 @@
           "package_name": "com.example.cantiquesdioula"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "629978763581-uf2sdfkegfi7n1orld713hqaup5bb3et.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cantiquesdioula",
+            "certificate_hash": "9ccaeb3d02c45f1868e4b4db0ab887f20aa6a825"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD42qy0orPRIjqfcOMo4EPe5dy_NuRKB6E"

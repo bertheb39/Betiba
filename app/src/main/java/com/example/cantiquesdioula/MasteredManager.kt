@@ -7,6 +7,11 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+// Imports Coroutines que nous ajoutons
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object MasteredManager {
 
@@ -14,10 +19,8 @@ object MasteredManager {
     private val auth = Firebase.auth
     private val db = Firebase.firestore
 
-    // Cache en mémoire
     private var masteredCache = mutableSetOf<Int>()
 
-    // SharedPreferences pour le mode hors-ligne
     private const val PREFS_NAME = "MasteredPrefs"
     private const val KEY_LOCAL_MASTERED = "key_local_mastered"
 
@@ -32,41 +35,55 @@ object MasteredManager {
 
     /**
      * Charge les cantiques maîtrisés au démarrage.
+     *
+     * CORRECTION : S'exécute maintenant sur un thread d'arrière-plan (Dispatchers.IO)
+     * pour ne pas bloquer l'interface utilisateur.
      */
     fun loadMastered(context: Context, onComplete: () -> Unit) {
-        val user = auth.currentUser
-        masteredCache.clear()
+        // On lance le travail sur un thread d'arrière-plan
+        CoroutineScope(Dispatchers.IO).launch {
+            val user = auth.currentUser
+            masteredCache.clear()
 
-        if (user != null) {
-            // Connecté: Charger depuis Firestore
-            db.collection("users").document(user.uid)
-                .get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val firestoreMastered = document.get("mastered") as? List<Long>
-                        if (firestoreMastered != null) {
-                            masteredCache.addAll(firestoreMastered.map { it.toInt() })
-                            Log.d(TAG, "Maîtrisés chargés depuis Firestore: ${masteredCache.size} éléments.")
+            if (user != null) {
+                // Connecté: Charger depuis Firestore
+                db.collection("users").document(user.uid)
+                    .get()
+                    .addOnSuccessListener { document ->
+                        if (document.exists()) {
+                            val firestoreMastered = document.get("mastered") as? List<Long>
+                            if (firestoreMastered != null) {
+                                masteredCache.addAll(firestoreMastered.map { it.toInt() })
+                                Log.d(TAG, "Maîtrisés chargés depuis Firestore: ${masteredCache.size} éléments.")
+                            }
                         }
+                        // Callback sur le thread principal (géré par Firebase)
+                        onComplete()
                     }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Erreur de chargement des 'mastered' Firestore", e)
+                        // Callback sur le thread principal (géré par Firebase)
+                        onComplete()
+                    }
+            } else {
+                // Déconnecté: Charger depuis SharedPreferences
+                // C'est cette opération (I/O) qui bloquait le thread principal
+                val prefs = getLocalPrefs(context)
+                val localStrings = prefs.getStringSet(KEY_LOCAL_MASTERED, emptySet()) ?: emptySet()
+                masteredCache.addAll(localStrings.map { it.toInt() })
+                Log.d(TAG, "Maîtrisés chargés depuis SharedPreferences: ${masteredCache.size} éléments.")
+
+                // On revient sur le thread principal pour appeler le callback
+                withContext(Dispatchers.Main) {
                     onComplete()
                 }
-                .addOnFailureListener { e ->
-                    Log.w(TAG, "Erreur de chargement des 'mastered' Firestore", e)
-                    onComplete()
-                }
-        } else {
-            // Déconnecté: Charger depuis SharedPreferences
-            val prefs = getLocalPrefs(context)
-            val localStrings = prefs.getStringSet(KEY_LOCAL_MASTERED, emptySet()) ?: emptySet()
-            masteredCache.addAll(localStrings.map { it.toInt() })
-            Log.d(TAG, "Maîtrisés chargés depuis SharedPreferences: ${masteredCache.size} éléments.")
-            onComplete()
+            }
         }
     }
 
     /**
      * Ajoute un cantique aux maîtrisés.
+     * (Fonction inchangée)
      */
     fun addMastered(context: Context, songId: Int) {
         if (masteredCache.contains(songId)) return
@@ -75,7 +92,6 @@ object MasteredManager {
         val user = auth.currentUser
 
         if (user != null) {
-            // Connecté: Sauvegarder sur Firestore
             val userDoc = db.collection("users").document(user.uid)
             userDoc.update("mastered", FieldValue.arrayUnion(songId))
                 .addOnFailureListener { e ->
@@ -86,7 +102,6 @@ object MasteredManager {
                     }
                 }
         } else {
-            // Déconnecté: Sauvegarder en local
             val prefs = getLocalPrefs(context)
             val localStrings = prefs.getStringSet(KEY_LOCAL_MASTERED, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
             localStrings.add(songId.toString())
@@ -96,6 +111,7 @@ object MasteredManager {
 
     /**
      * Retire un cantique des maîtrisés.
+     * (Fonction inchangée)
      */
     fun removeMastered(context: Context, songId: Int) {
         if (!masteredCache.contains(songId)) return
@@ -104,14 +120,12 @@ object MasteredManager {
         val user = auth.currentUser
 
         if (user != null) {
-            // Connecté: Mettre à jour Firestore
             val userDoc = db.collection("users").document(user.uid)
             userDoc.update("mastered", FieldValue.arrayRemove(songId))
                 .addOnFailureListener { e ->
                     Log.w(TAG, "Erreur 'removeMastered' Firestore", e)
                 }
         } else {
-            // Déconnecté: Mettre à jour SharedPreferences
             val prefs = getLocalPrefs(context)
             val localStrings = prefs.getStringSet(KEY_LOCAL_MASTERED, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
             localStrings.remove(songId.toString())
@@ -121,6 +135,7 @@ object MasteredManager {
 
     /**
      * Inverse l'état "maîtrisé".
+     * (Fonction inchangée)
      */
     fun toggleMastered(context: Context, songId: Int) {
         if (isMastered(songId)) {
@@ -132,6 +147,7 @@ object MasteredManager {
 
     /**
      * Vide le cache et les "maîtrisés" locaux lors de la déconnexion.
+     * (Fonction inchangée)
      */
     fun clearMasteredOnLogout(context: Context) {
         masteredCache.clear()

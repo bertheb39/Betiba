@@ -1,13 +1,10 @@
 package com.example.cantiquesdioula
 
-import android.os.Build // Nécessaire pour getParcelableArrayListExtra
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.viewpager2.widget.ViewPager2 // <-- Import pour ViewPager2
+import androidx.viewpager2.widget.ViewPager2 // Import pour ViewPager2
 
-// Clés pour les extras (vous pouvez aussi les mettre dans un fichier Constants.kt)
-const val EXTRA_SONGS_LIST = "com.example.cantiquesdioula.EXTRA_SONGS_LIST"
-const val EXTRA_CURRENT_SONG_POSITION = "com.example.cantiquesdioula.EXTRA_CURRENT_SONG_POSITION"
+// Les constantes ont été déplacées dans Constants.kt
 
 class SongPagerActivity : AppCompatActivity() {
 
@@ -20,19 +17,14 @@ class SongPagerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_song_pager2) // Assurez-vous que c'est le bon layout
 
-        // --- 1. Récupérer les données passées par l'Intent ---
+        // --- 1. Récupérer les données ---
         intent?.let {
-            // Récupérer la liste des cantiques
-            songsList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                it.getParcelableArrayListExtra(EXTRA_SONGS_LIST, Song::class.java) ?: emptyList()
-            } else {
-                @Suppress("DEPRECATION")
-                it.getParcelableArrayListExtra(EXTRA_SONGS_LIST) ?: emptyList()
-            }
-
-            // Récupérer la position du cantique cliqué (0 par défaut si non trouvée)
+            // On ne récupère QUE la position (en utilisant notre constante)
             currentPosition = it.getIntExtra(EXTRA_CURRENT_SONG_POSITION, 0)
         }
+
+        // On récupère la liste complète depuis notre "mémoire" (Repository)
+        songsList = SongRepository.allSongs
 
         // --- 2. Vérifier si la liste de cantiques n'est pas vide ---
         if (songsList.isEmpty()) {
@@ -43,7 +35,7 @@ class SongPagerActivity : AppCompatActivity() {
         }
 
         // --- 3. Initialiser le ViewPager2 et l'Adapter ---
-        viewPager = findViewById(R.id.song_view_pager) // Utiliser l'ID de votre ViewPager2 dans activity_song_pager2.xml
+        viewPager = findViewById(R.id.song_view_pager) // Utiliser l'ID de votre ViewPager2
 
         // Créer l'adapter en lui passant l'activité (this) et la liste des cantiques
         songPagerAdapter = SongPagerAdapter(this, songsList)
@@ -53,6 +45,6 @@ class SongPagerActivity : AppCompatActivity() {
 
         // --- 4. Afficher la bonne page au démarrage ---
         // Se positionner sur le cantique qui a été cliqué
-        viewPager.setCurrentItem(currentPosition, false) // false pour ne pas animer le premier affichage
+        viewPager.setCurrentItem(currentPosition, false) // false pour ne pas animer
     }
 }

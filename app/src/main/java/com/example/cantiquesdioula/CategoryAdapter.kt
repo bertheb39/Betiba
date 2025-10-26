@@ -7,11 +7,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import java.util.ArrayList // Import nécessaire
+import java.util.ArrayList // Gardez cet import si d'autres parties l'utilisent
 
 class CategoryAdapter(
     private val categories: List<Category>,
-    private val allSongs: List<Song> // <-- AJOUT : Recevoir la liste complète
+    private val allSongs: List<Song> // C'est bien de garder ça
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val expandedCategories = mutableSetOf<String>()
@@ -21,15 +21,13 @@ class CategoryAdapter(
         private const val TYPE_SONG = 1
     }
 
-    // items contient maintenant des Category ou des Song
     private var items: List<Any> = buildList()
 
     private fun buildList(): List<Any> {
         val list = mutableListOf<Any>()
         categories.forEach { category ->
-            list.add(category) // Ajouter la catégorie elle-même
+            list.add(category)
             if (expandedCategories.contains(category.name)) {
-                // Ajouter les chansons de cette catégorie si elle est dépliée
                 list.addAll(category.songs)
             }
         }
@@ -55,13 +53,13 @@ class CategoryAdapter(
         if (holder is CategoryViewHolder && item is Category) {
             holder.bind(item)
         } else if (holder is SongItemViewHolder && item is Song) {
-            holder.bind(item) // Lier les données du cantique
+            holder.bind(item)
         }
     }
 
     override fun getItemCount(): Int = items.size
 
-    // ViewHolder pour une catégorie (ne change pas)
+    // ViewHolder pour une catégorie (inchangé)
     inner class CategoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val categoryName: TextView = itemView.findViewById(R.id.category_name)
         private val arrow: ImageView = itemView.findViewById(R.id.category_arrow)
@@ -69,24 +67,23 @@ class CategoryAdapter(
         fun bind(category: Category) {
             categoryName.text = category.name
             val isExpanded = expandedCategories.contains(category.name)
-            arrow.rotation = if (isExpanded) 180f else 0f // Tourner la flèche
+            arrow.rotation = if (isExpanded) 180f else 0f
 
             itemView.setOnClickListener {
-                if (category.songs.isNotEmpty()) { // Ne rien faire si la catégorie est vide
+                if (category.songs.isNotEmpty()) {
                     if (isExpanded) {
                         expandedCategories.remove(category.name)
                     } else {
                         expandedCategories.add(category.name)
                     }
-                    // Reconstruire la liste des items à afficher et notifier l'adaptateur
                     items = buildList()
-                    notifyDataSetChanged() // Attention: Peut être inefficace pour de grandes listes
+                    notifyDataSetChanged()
                 }
             }
         }
     }
 
-    // ViewHolder pour un cantique (le clic est modifié ici)
+    // ViewHolder pour un cantique (CLIC CORRIGÉ)
     inner class SongItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val songNumber: TextView = itemView.findViewById(R.id.song_number)
         private val songTitle: TextView = itemView.findViewById(R.id.song_title)
@@ -99,23 +96,26 @@ class CategoryAdapter(
             val savedFontSize = SettingsManager.getFontSize(context)
             songTitle.textSize = savedFontSize - 2f
 
-            // --- DÉBUT MODIFICATION CLIC ---
+            // --- DÉBUT DE LA CORRECTION DU CLIC ---
             itemView.setOnClickListener {
-                val intent = Intent(context, SongPagerActivity::class.java)
+                // 1. Stocker la liste complète (allSongs) dans le Repository
+                SongRepository.allSongs = allSongs
 
-                // Utiliser la liste complète 'allSongs' fournie à l'adaptateur
-                val listToPass = ArrayList(allSongs) // Toujours passer la liste complète et triée
-
-                // Trouver la position du cantique cliqué dans cette liste complète
+                // 2. Trouver la VRAIE position du cantique dans la liste complète
                 val originalPosition = allSongs.indexOf(song)
                 val positionToPass = if (originalPosition != -1) originalPosition else 0
 
-                intent.putParcelableArrayListExtra(EXTRA_SONGS_LIST, listToPass)
+                // 3. Créer l'Intent
+                val intent = Intent(context, SongPagerActivity::class.java)
+
+                // 4. On ne passe QUE la position !
                 intent.putExtra(EXTRA_CURRENT_SONG_POSITION, positionToPass)
+
+                // 5. On NE PASSE PLUS la liste (la ligne "putParcelableArrayListExtra" est supprimée)
 
                 context.startActivity(intent)
             }
-            // --- FIN MODIFICATION CLIC ---
+            // --- FIN DE LA CORRECTION DU CLIC ---
         }
     }
 }

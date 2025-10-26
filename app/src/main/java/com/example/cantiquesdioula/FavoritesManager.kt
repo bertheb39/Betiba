@@ -7,6 +7,11 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+// Imports Coroutines que nous ajoutons
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object FavoritesManager {
 
@@ -14,10 +19,8 @@ object FavoritesManager {
     private val auth = Firebase.auth
     private val db = Firebase.firestore
 
-    // Cache en mémoire pour un accès instantané (l'app est plus rapide)
     private var favoritesCache = mutableSetOf<Int>()
 
-    // SharedPreferences pour les favoris de l'utilisateur "déconnecté"
     private const val PREFS_NAME = "FavoritesPrefs"
     private const val KEY_LOCAL_FAVORITES = "key_local_favorites"
 
@@ -34,60 +37,69 @@ object FavoritesManager {
      * Charge les favoris au démarrage de l'application.
      * Si connecté: depuis Firestore vers le cache.
      * Si déconnecté: depuis SharedPreferences vers le cache.
+     * * CORRECTION : S'exécute maintenant sur un thread d'arrière-plan (Dispatchers.IO)
+     * pour ne pas bloquer l'interface utilisateur.
      */
     fun loadFavorites(context: Context, onComplete: () -> Unit) {
-        val user = auth.currentUser
-        favoritesCache.clear() // Vider le cache avant de charger
+        // On lance le travail sur un thread d'arrière-plan
+        CoroutineScope(Dispatchers.IO).launch {
+            val user = auth.currentUser
+            favoritesCache.clear() // Vider le cache avant de charger
 
-        if (user != null) {
-            // Utilisateur connecté : Charger depuis Firestore
-            db.collection("users").document(user.uid)
-                .get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val firestoreFavorites = document.get("favorites") as? List<Long>
-                        if (firestoreFavorites != null) {
-                            // Convertir List<Long> en MutableSet<Int>
-                            favoritesCache.addAll(firestoreFavorites.map { it.toInt() })
-                            Log.d(TAG, "Favoris chargés depuis Firestore: ${favoritesCache.size} éléments.")
+            if (user != null) {
+                // Utilisateur connecté : Charger depuis Firestore
+                // L'API Firebase gère son propre thread, mais on l'appelle
+                // depuis le thread IO pour être sûr que l'initialisation ne bloque pas.
+                db.collection("users").document(user.uid)
+                    .get()
+                    .addOnSuccessListener { document ->
+                        if (document.exists()) {
+                            val firestoreFavorites = document.get("favorites") as? List<Long>
+                            if (firestoreFavorites != null) {
+                                favoritesCache.addAll(firestoreFavorites.map { it.toInt() })
+                                Log.d(TAG, "Favoris chargés depuis Firestore: ${favoritesCache.size} éléments.")
+                            }
+                        } else {
+                            Log.d(TAG, "Aucun document utilisateur, favoris vides.")
                         }
-                    } else {
-                        Log.d(TAG, "Aucun document utilisateur, favoris vides.")
+                        // Le callback de Firebase est déjà sur le thread principal
+                        onComplete()
                     }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Erreur de chargement des favoris Firestore", e)
+                        // Le callback de Firebase est déjà sur le thread principal
+                        onComplete()
+                    }
+            } else {
+                // Utilisateur déconnecté : Charger depuis SharedPreferences
+                // C'est cette opération (I/O) qui bloquait le thread principal
+                val prefs = getLocalPrefs(context)
+                val localStrings = prefs.getStringSet(KEY_LOCAL_FAVORITES, emptySet()) ?: emptySet()
+                favoritesCache.addAll(localStrings.map { it.toInt() })
+                Log.d(TAG, "Favoris chargés depuis SharedPreferences: ${favoritesCache.size} éléments.")
+
+                // On revient sur le thread principal pour appeler le callback
+                withContext(Dispatchers.Main) {
                     onComplete()
                 }
-                .addOnFailureListener { e ->
-                    Log.w(TAG, "Erreur de chargement des favoris Firestore", e)
-                    onComplete()
-                }
-        } else {
-            // Utilisateur déconnecté : Charger depuis SharedPreferences
-            val prefs = getLocalPrefs(context)
-            val localStrings = prefs.getStringSet(KEY_LOCAL_FAVORITES, emptySet()) ?: emptySet()
-            favoritesCache.addAll(localStrings.map { it.toInt() })
-            Log.d(TAG, "Favoris chargés depuis SharedPreferences: ${favoritesCache.size} éléments.")
-            onComplete()
+            }
         }
     }
 
     /**
      * Ajoute un favori.
-     * Si connecté: au cache ET à Firestore.
-     * Si déconnecté: au cache ET aux SharedPreferences.
+     * (Fonction inchangée)
      */
     fun addFavorite(context: Context, songId: Int) {
-        if (favoritesCache.contains(songId)) return // Déjà favori
+        if (favoritesCache.contains(songId)) return
 
         favoritesCache.add(songId)
         val user = auth.currentUser
 
         if (user != null) {
-            // Utilisateur connecté : Sauvegarder sur Firestore
             val userDoc = db.collection("users").document(user.uid)
-            // FieldValue.arrayUnion() ajoute l'ID seulement s'il n'existe pas
             userDoc.update("favorites", FieldValue.arrayUnion(songId))
                 .addOnFailureListener { e ->
-                    // Échec (probablement le document n'existe pas), on le crée
                     if (e is com.google.firebase.firestore.FirebaseFirestoreException && e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.NOT_FOUND) {
                         userDoc.set(mapOf("favorites" to listOf(songId)), SetOptions.merge())
                     } else {
@@ -95,7 +107,6 @@ object FavoritesManager {
                     }
                 }
         } else {
-            // Utilisateur déconnecté : Sauvegarder en local
             val prefs = getLocalPrefs(context)
             val localStrings = prefs.getStringSet(KEY_LOCAL_FAVORITES, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
             localStrings.add(songId.toString())
@@ -105,25 +116,21 @@ object FavoritesManager {
 
     /**
      * Retire un favori.
-     * Si connecté: du cache ET de Firestore.
-     * Si déconnecté: du cache ET des SharedPreferences.
+     * (Fonction inchangée)
      */
     fun removeFavorite(context: Context, songId: Int) {
-        if (!favoritesCache.contains(songId)) return // Pas en favori
+        if (!favoritesCache.contains(songId)) return
 
         favoritesCache.remove(songId)
         val user = auth.currentUser
 
         if (user != null) {
-            // Utilisateur connecté : Mettre à jour Firestore
             val userDoc = db.collection("users").document(user.uid)
-            // FieldValue.arrayRemove() retire l'ID
             userDoc.update("favorites", FieldValue.arrayRemove(songId))
                 .addOnFailureListener { e ->
                     Log.w(TAG, "Erreur 'removeFavorite' Firestore", e)
                 }
         } else {
-            // Utilisateur déconnecté : Mettre à jour SharedPreferences
             val prefs = getLocalPrefs(context)
             val localStrings = prefs.getStringSet(KEY_LOCAL_FAVORITES, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
             localStrings.remove(songId.toString())
@@ -133,6 +140,7 @@ object FavoritesManager {
 
     /**
      * Inverse l'état de favori (ajoute ou retire).
+     * (Fonction inchangée)
      */
     fun toggleFavorite(context: Context, songId: Int) {
         if (isFavorite(songId)) {
@@ -144,6 +152,7 @@ object FavoritesManager {
 
     /**
      * Vide le cache et les favoris locaux lors de la déconnexion.
+     * (Fonction inchangée)
      */
     fun clearFavoritesOnLogout(context: Context) {
         favoritesCache.clear()

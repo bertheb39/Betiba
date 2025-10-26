@@ -9,7 +9,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import java.util.ArrayList // Import nécessaire
+import java.util.ArrayList
 import java.util.Locale
 
 class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdapter.SongViewHolder>(), Filterable {
@@ -18,41 +18,43 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
     private var songListFull: List<Song> = ArrayList(songs)
 
     class SongViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // J'utilise les IDs de votre code
         val songNumber: TextView = itemView.findViewById(R.id.song_number)
         val songTitle: TextView = itemView.findViewById(R.id.song_title)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
-        // J'utilise le layout de votre code
         val view = LayoutInflater.from(parent.context).inflate(R.layout.list_item_song, parent, false)
         return SongViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
+        // S'assurer que la position est valide
+        if (position < 0 || position >= songs.size) {
+            return // Ne rien faire si la position est invalide
+        }
+
         val song = songs[position]
-        val context = holder.itemView.context // Récupérer le contexte
+        val context = holder.itemView.context
 
         holder.songNumber.text = song.id.toString()
         holder.songTitle.text = song.title.replace("\n", " ").trim()
 
-        // Appliquer la taille de police sauvegardée
         val savedFontSize = SettingsManager.getFontSize(context)
         holder.songTitle.textSize = savedFontSize - 2f
 
-        // --- Logique de Clic (votre code) ---
+        // --- Logique de Clic CORRIGÉE ---
         holder.itemView.setOnClickListener {
-            val intent = Intent(context, SongPagerActivity::class.java)
+            // 1. On stocke la liste complète dans notre "mémoire" (Repository)
+            SongRepository.allSongs = songListFull
 
-            // On passe TOUJOURS la liste complète
-            val listToPass = ArrayList(songListFull)
-
-            // Trouver la VRAIE position dans la liste complète
+            // 2. Trouver la VRAIE position dans la liste complète
             val originalPosition = songListFull.indexOf(song)
             val positionToPass = if (originalPosition != -1) originalPosition else 0
 
-            // Mettre la liste complète et la position dans l'Intent
-            intent.putParcelableArrayListExtra(EXTRA_SONGS_LIST, listToPass)
+            // 3. Créer l'Intent
+            val intent = Intent(context, SongPagerActivity::class.java)
+
+            // 4. On ne passe QUE la position !
             intent.putExtra(EXTRA_CURRENT_SONG_POSITION, positionToPass)
 
             context.startActivity(intent)
@@ -61,30 +63,20 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
 
     fun updateList(newList: List<Song>) {
         songs = ArrayList(newList)
-        // Mettre à jour la liste complète SEULEMENT si la nouvelle liste est la liste complète
-        // Pour le filtre, songListFull ne doit pas changer.
-        if (songs.size > songListFull.size) { // Simple heuristique
-            songListFull = ArrayList(newList)
-        } else if (songs.isEmpty() && songListFull.isNotEmpty()) {
-            // cas spécial: la liste filtrée est vide
-        } else if (songListFull.isEmpty()) {
-            songListFull = ArrayList(newList)
-        }
-
         notifyDataSetChanged()
     }
 
-    // S'assurer que la liste complète est bien à jour quand on crée l'adaptateur
+    // Fonction pour définir à la fois la liste complète (pour les clics)
+    // et la liste à afficher
     fun setFullList(fullList: List<Song>) {
         songListFull = ArrayList(fullList)
-        songs = ArrayList(fullList) // Au début, la liste affichée est la liste complète
+        songs = ArrayList(fullList)
         notifyDataSetChanged()
     }
-
 
     override fun getItemCount(): Int = songs.size
 
-    // --- Votre code de filtrage (inchangé) ---
+    // --- Filtrage ---
     override fun getFilter(): Filter {
         return songFilter
     }
@@ -115,11 +107,4 @@ class SongAdapter(private var songs: List<Song>) : RecyclerView.Adapter<SongAdap
             notifyDataSetChanged()
         }
     }
-
-    // --- AJOUT : Constantes Manquantes ---
-    companion object {
-        const val EXTRA_SONGS_LIST = "SONG_LIST"
-        const val EXTRA_CURRENT_SONG_POSITION = "CURRENT_POSITION"
-    }
-    // --- FIN DE L'AJOUT ---
 }
