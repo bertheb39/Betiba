@@ -1,24 +1,27 @@
 package com.example.cantiquesdioula
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import java.util.ArrayList // Added import
-import java.util.Locale // Keep existing import
+import java.util.ArrayList
+import java.util.Locale
+import android.widget.Filter
+import android.widget.Filterable
 
-class NumberAdapter(initialSongs: List<Song>) : RecyclerView.Adapter<NumberAdapter.NumberViewHolder>(), Filterable {
-    // Keep a mutable list for the currently displayed songs
-    private var songs: MutableList<Song> = ArrayList(initialSongs)
-    // Keep an immutable copy of the full, sorted list for reference and filtering
-    private var songListFull: List<Song> = ArrayList(initialSongs).sortedBy { it.id } // Ensure it's sorted
+class NumberAdapter(
+    private var songs: List<Song> // La liste affichée
+) : RecyclerView.Adapter<NumberAdapter.NumberViewHolder>(), Filterable {
+
+    // Garder la liste complète pour le filtrage et les clics
+    private var songListFull: List<Song> = ArrayList(songs)
 
     class NumberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val numberText: TextView = itemView.findViewById(R.id.number_text)
+        val number: TextView = itemView.findViewById(R.id.number_text)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NumberViewHolder {
@@ -27,73 +30,74 @@ class NumberAdapter(initialSongs: List<Song>) : RecyclerView.Adapter<NumberAdapt
     }
 
     override fun onBindViewHolder(holder: NumberViewHolder, position: Int) {
-        val song = songs[position] // Get song from the currently displayed (possibly filtered) list
-        holder.numberText.text = song.id.toString()
+        val song = songs[position]
+        val context = holder.itemView.context
+        holder.number.text = song.id.toString()
 
-        // --- START OF CLICK LISTENER CORRECTION ---
+        val savedFontSize = SettingsManager.getFontSize(context)
+        holder.number.textSize = savedFontSize - 2f
+
+        // --- DÉBUT DE LA CORRECTION DU CLIC ---
         holder.itemView.setOnClickListener {
-            val context = holder.itemView.context
-            // Target the new SongPagerActivity
-            val intent = Intent(context, SongPagerActivity::class.java)
+            // 1. Stocker la liste COMPLÈTE (songListFull) dans le Repository
+            // C'est instantané.
+            SongRepository.allSongs = songListFull
 
-            // Pass the FULL list of songs (converted to ArrayList)
-            val listToPass = ArrayList(songListFull)
-
-            // Find the actual position of the clicked song in the FULL list
+            // 2. Trouver la VRAIE position du cantique cliqué dans la liste complète
             val originalPosition = songListFull.indexOf(song)
-            // Use the found position, or default to 0 if not found (safety check)
             val positionToPass = if (originalPosition != -1) originalPosition else 0
 
-            // Add the full list and the correct starting position to the Intent
-            intent.putParcelableArrayListExtra(EXTRA_SONGS_LIST, listToPass)
+            // 3. Créer l'Intent
+            val intent = Intent(context, SongPagerActivity::class.java)
+
+            // 4. On ne passe QUE la position !
             intent.putExtra(EXTRA_CURRENT_SONG_POSITION, positionToPass)
 
-            // Start the SongPagerActivity
+            // 5. ON NE PASSE PLUS LA LISTE (L'erreur "Large transaction" est corrigée)
+            // intent.putParcelableArrayListExtra(EXTRA_SONGS_LIST, listToPass) // <-- LIGNE SUPPRIMÉE
+
             context.startActivity(intent)
         }
-        // --- END OF CLICK LISTENER CORRECTION ---
+        // --- FIN DE LA CORRECTION DU CLIC ---
     }
 
     override fun getItemCount(): Int = songs.size
 
-    override fun getFilter(): Filter {
-        return object : Filter() {
-            override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val filteredList = mutableListOf<Song>() // Start with an empty list
-                if (constraint.isNullOrEmpty()) {
-                    // If no filter, add all songs from the full list
-                    filteredList.addAll(songListFull)
-                } else {
-                    val filterPattern = constraint.toString().trim()
-                    // Filter the full list based on the ID containing the pattern
-                    for (song in songListFull) {
-                        if (song.id.toString().contains(filterPattern)) {
-                            filteredList.add(song)
-                        }
-                    }
-                }
-                val results = FilterResults()
-                results.values = filteredList // The result is the filtered list
-                return results
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                songs.clear() // Clear the currently displayed list
-                val resultList = results?.values as? List<Song>
-                if (resultList != null) {
-                    songs.addAll(resultList) // Add the filtered results
-                }
-                notifyDataSetChanged() // Update the RecyclerView
-            }
-        }
+    // S'assurer que la liste complète est bien à jour
+    fun setFullList(fullList: List<Song>) {
+        songListFull = ArrayList(fullList)
+        songs = ArrayList(fullList)
+        notifyDataSetChanged()
     }
 
-    // Optional: Function to update the adapter if the underlying data source changes
-    fun updateFullList(newFullList: List<Song>) {
-        songListFull = ArrayList(newFullList).sortedBy { it.id } // Store the new sorted full list
-        songs.clear() // Clear the displayed list
-        songs.addAll(songListFull) // Reset displayed list to the full list
-        notifyDataSetChanged()
+    // --- Filtrage (nécessaire si la recherche fonctionne ici aussi) ---
+    override fun getFilter(): Filter {
+        return songFilter
+    }
+
+    private val songFilter: Filter = object : Filter() {
+        override fun performFiltering(constraint: CharSequence?): FilterResults {
+            val filteredList: MutableList<Song> = ArrayList()
+            if (constraint == null || constraint.isEmpty()) {
+                filteredList.addAll(songListFull)
+            } else {
+                val filterPattern = constraint.toString().lowercase(Locale.getDefault()).trim()
+                for (song in songListFull) {
+                    if (song.title.lowercase(Locale.getDefault()).contains(filterPattern) ||
+                        song.id.toString().contains(filterPattern)) {
+                        filteredList.add(song)
+                    }
+                }
+            }
+            val results = FilterResults()
+            results.values = filteredList
+            return results
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+            songs = results?.values as? List<Song> ?: emptyList()
+            notifyDataSetChanged()
+        }
     }
 }
