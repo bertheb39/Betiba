@@ -4,12 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar // <-- AJOUT
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope // <-- Import important
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers // <-- Import important
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
@@ -17,45 +18,63 @@ import java.io.InputStreamReader
 class AllSongsFragment : Fragment(), FilterableFragment {
 
     private lateinit var songAdapter: SongAdapter
-    private var allSongsList: List<Song> = emptyList() // Garde la liste en mémoire ici
+    private var allSongsList: List<Song> = emptyList()
+
+    // --- AJOUT DES RÉFÉRENCES ---
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var progressBar: ProgressBar
+    // --- FIN AJOUT ---
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_all_songs, container, false)
-        val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_all_songs)
+
+        // --- DÉBUT MODIFICATION ---
+        // On récupère les références
+        recyclerView = view.findViewById(R.id.recycler_view_all_songs)
+        progressBar = view.findViewById(R.id.progress_bar_all)
+        // --- FIN MODIFICATION ---
 
         // 1. Initialiser l'adaptateur avec une liste VIDE
-        // L'affichage est instantané.
         songAdapter = SongAdapter(emptyList())
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = songAdapter
 
-        // 2. Lancer le chargement des données en arrière-plan
+        // 2. Lancer le chargement des données
         loadSongsData()
 
         return view
     }
 
     private fun loadSongsData() {
-        // Lance une coroutine liée au cycle de vie du fragment
         lifecycleScope.launch {
-            // Si la liste est déjà chargée (ex: changement d'orientation), on ne fait rien
             if (allSongsList.isNotEmpty()) {
                 songAdapter.setFullList(allSongsList)
                 songAdapter.updateList(allSongsList)
+
+                // --- AJOUT ---
+                progressBar.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
+                // --- FIN AJOUT ---
                 return@launch
             }
 
-            // 1. (TRAVAIL EN ARRIÈRE-PLAN)
-            // On bascule sur le thread IO (Input/Output) pour lire le fichier et l'analyser
+            // --- AJOUT (Pendant le chargement) ---
+            progressBar.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            // --- FIN AJOUT ---
+
             val songs = withContext(Dispatchers.IO) {
-                loadSongsFromAssets() // Cette fonction est maintenant appelée en arrière-plan
+                loadSongsFromAssets()
             }
 
-            // 2. (RETOUR SUR LE THREAD PRINCIPAL)
-            // withContext est terminé, nous sommes de retour sur le thread principal (UI)
-            allSongsList = songs // On sauvegarde la liste
-            songAdapter.setFullList(allSongsList) // On dit à l'adaptateur quelle est la liste complète (pour les clics)
-            songAdapter.updateList(allSongsList) // On affiche la liste
+            allSongsList = songs
+            songAdapter.setFullList(allSongsList)
+            songAdapter.updateList(allSongsList)
+
+            // --- AJOUT (Quand le chargement est fini) ---
+            progressBar.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            // --- FIN AJOUT ---
         }
     }
 
@@ -67,13 +86,10 @@ class AllSongsFragment : Fragment(), FilterableFragment {
 
     fun refreshList() {
         if (::songAdapter.isInitialized && isAdded) {
-            // Il suffit de notifier l'adaptateur que les données (favoris) ont changé
             songAdapter.notifyDataSetChanged()
         }
     }
 
-    // Cette fonction ne change pas, mais elle est maintenant
-    // appelée depuis un thread d'arrière-plan
     private fun loadSongsFromAssets(): List<Song> {
         return try {
             val inputStream = requireContext().assets.open("CAD.json")

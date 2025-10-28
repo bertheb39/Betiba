@@ -4,65 +4,75 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar // <-- AJOUT
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope // <-- AJOUT
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
-import kotlinx.coroutines.Dispatchers // <-- AJOUT
-import kotlinx.coroutines.launch // <-- AJOUT
-import kotlinx.coroutines.withContext // <-- AJOUT
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
 
 class NumbersFragment : Fragment(), FilterableFragment {
 
     private lateinit var numberAdapter: NumberAdapter
-    // On garde la liste en mémoire ici
     private var allSongsList: List<Song> = emptyList()
+
+    // --- AJOUT DES RÉFÉRENCES ---
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var progressBar: ProgressBar
+    // --- FIN AJOUT ---
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_numbers, container, false)
-        val recyclerView: RecyclerView = view.findViewById(R.id.recycler_view_numbers)
 
-        // --- DÉBUT DE LA MODIFICATION ---
+        // --- DÉBUT MODIFICATION ---
+        recyclerView = view.findViewById(R.id.recycler_view_numbers)
+        progressBar = view.findViewById(R.id.progress_bar_numbers)
+        // --- FIN MODIFICATION ---
 
         // 1. Initialiser l'adaptateur avec une liste VIDE
-        // L'affichage est instantané.
         numberAdapter = NumberAdapter(emptyList())
         recyclerView.layoutManager = GridLayoutManager(requireContext(), 5)
         recyclerView.adapter = numberAdapter
 
-        // 2. Lancer le chargement des données en arrière-plan
+        // 2. Lancer le chargement des données
         loadSongsData()
-
-        // --- FIN DE LA MODIFICATION ---
 
         return view
     }
 
-    // --- DÉBUT DES AJOUTS ---
     private fun loadSongsData() {
-        // Lance une coroutine liée au cycle de vie du fragment
         lifecycleScope.launch {
-            // Si la liste est déjà chargée, on l'affiche
             if (allSongsList.isNotEmpty()) {
-                numberAdapter.updateSongs(allSongsList) // (Nous supposons que cette méthode existe)
+                numberAdapter.updateSongs(allSongsList)
+                // --- AJOUT ---
+                progressBar.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
+                // --- FIN AJOUT ---
                 return@launch
             }
 
-            // 1. (TRAVAIL EN ARRIÈRE-PLAN)
-            // On bascule sur le thread IO (Input/Output) pour lire le fichier
+            // --- AJOUT (Pendant le chargement) ---
+            progressBar.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+            // --- FIN AJOUT ---
+
             val songs = withContext(Dispatchers.IO) {
-                loadSongsFromAssets() // Appel en arrière-plan
+                loadSongsFromAssets()
             }
 
-            // 2. (RETOUR SUR LE THREAD PRINCIPAL)
-            // On affiche la liste
             allSongsList = songs
             numberAdapter.updateSongs(allSongsList)
+
+            // --- AJOUT (Quand le chargement est fini) ---
+            progressBar.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            // --- FIN AJOUT ---
         }
     }
-    // --- FIN DES AJOUTS ---
 
 
     override fun filter(query: String?) {
@@ -72,8 +82,7 @@ class NumbersFragment : Fragment(), FilterableFragment {
     }
 
     fun refreshList() {
-        // Cette fonction n'a rien besoin de faire pour les numéros,
-        // car ils n'affichent pas les favoris.
+        // Rien à faire ici
     }
 
     private fun loadSongsFromAssets(): List<Song> {
