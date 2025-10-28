@@ -37,28 +37,14 @@ class NumberAdapter(
         val savedFontSize = SettingsManager.getFontSize(context)
         holder.number.textSize = savedFontSize - 2f
 
-        // --- DÉBUT DE LA CORRECTION DU CLIC ---
         holder.itemView.setOnClickListener {
-            // 1. Stocker la liste COMPLÈTE (songListFull) dans le Repository
-            // C'est instantané.
             SongRepository.allSongs = songListFull
-
-            // 2. Trouver la VRAIE position du cantique cliqué dans la liste complète
             val originalPosition = songListFull.indexOf(song)
             val positionToPass = if (originalPosition != -1) originalPosition else 0
-
-            // 3. Créer l'Intent
             val intent = Intent(context, SongPagerActivity::class.java)
-
-            // 4. On ne passe QUE la position !
             intent.putExtra(EXTRA_CURRENT_SONG_POSITION, positionToPass)
-
-            // 5. ON NE PASSE PLUS LA LISTE (L'erreur "Large transaction" est corrigée)
-            // intent.putParcelableArrayListExtra(EXTRA_SONGS_LIST, listToPass) // <-- LIGNE SUPPRIMÉE
-
             context.startActivity(intent)
         }
-        // --- FIN DE LA CORRECTION DU CLIC ---
     }
 
     override fun getItemCount(): Int = songs.size
@@ -70,7 +56,16 @@ class NumberAdapter(
         notifyDataSetChanged()
     }
 
-    // --- Filtrage (nécessaire si la recherche fonctionne ici aussi) ---
+    // --- !! C'EST LA FONCTION QUI MANQUAIT !! ---
+    // Elle doit être ICI, à l'intérieur de la classe NumberAdapter
+    fun updateSongs(newSongs: List<Song>) {
+        songs = newSongs
+        songListFull = ArrayList(newSongs) // Met aussi à jour la liste complète pour le filtre
+        notifyDataSetChanged()
+    }
+    // --- FIN DE L'AJOUT ---
+
+    // --- Filtrage ---
     override fun getFilter(): Filter {
         return songFilter
     }
@@ -100,4 +95,5 @@ class NumberAdapter(
             notifyDataSetChanged()
         }
     }
+    // L'accolade de fermeture de la classe est ci-dessous
 }

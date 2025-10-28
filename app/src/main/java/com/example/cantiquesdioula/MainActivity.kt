@@ -38,24 +38,27 @@ class MainActivity : AppCompatActivity() {
         bottomNav = findViewById(R.id.bottom_navigation)
         navRail = findViewById(R.id.navigation_rail)
 
-        // Connexion de la barre de recherche (corrige le bug de la recherche)
         searchView?.let { setupSearch(it) }
 
         val navigationListener = NavigationBarView.OnItemSelectedListener { item ->
-            handleNavigation(item.itemId) // Appelle la fonction principale
+            handleNavigation(item.itemId)
             true
         }
 
         bottomNav?.setOnItemSelectedListener(navigationListener)
         navRail?.setOnItemSelectedListener(navigationListener)
 
-        // Charger les données utilisateur (Favoris, Maîtrisés)
+        // --- DÉBUT DE LA MODIFICATION ---
+        // Charger les données ET rafraîchir la liste quand c'est terminé
         FavoritesManager.loadFavorites(this) {
             Log.d("MainActivity", "Chargement des favoris terminé.")
+            refreshChildLists() // !! LIGNE AJOUTÉE !!
         }
         MasteredManager.loadMastered(this) {
             Log.d("MainActivity", "Chargement des 'maîtrisés' terminé.")
+            refreshChildLists() // !! LIGNE AJOUTÉE !!
         }
+        // --- FIN DE LA MODIFICATION ---
 
         if (savedInstanceState == null) {
             handleNavigation(R.id.nav_home)
@@ -69,14 +72,24 @@ class MainActivity : AppCompatActivity() {
         handleNavigationVisibility(selectedItemId)
         updateToolbarTitle(selectedItemId)
 
-        // --- CORRECTION : Appel de la bonne fonction ---
-        // J'appelle maintenant "refreshLists()" qui existe dans votre HomeFragment.kt
-        val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-        if (fragment is HomeFragment) {
-            fragment.refreshLists()
-        }
-        // --- FIN DE LA CORRECTION ---
+        // On rafraîchit aussi au cas où l'utilisateur
+        // aurait changé un favori dans un autre écran
+        refreshChildLists()
     }
+
+    // --- DÉBUT DE LA NOUVELLE FONCTION ---
+    // Fonction centralisée pour rafraîchir les listes dans les fragments enfants
+    private fun refreshChildLists() {
+        // runOnUiThread force le code à s'exécuter sur le thread principal,
+        // ce qui est obligatoire pour toucher à l'interface
+        runOnUiThread {
+            val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+            if (fragment is HomeFragment) {
+                fragment.refreshLists()
+            }
+        }
+    }
+    // --- FIN DE LA NOUVELLE FONCTION ---
 
     private fun handleNavigation(itemId: Int) {
         handleNavigationVisibility(itemId)
@@ -111,16 +124,12 @@ class MainActivity : AppCompatActivity() {
         searchView?.visibility = if (showSearch) View.VISIBLE else View.GONE
     }
 
-    // Cette fonction est maintenant connectée
     private fun setupSearch(searchView: SearchView) {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                // 1. Trouver le fragment principal (HomeFragment)
                 val homeFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
-
-                // 2. Appeler la fonction filterList de HomeFragment
                 if (homeFragment is HomeFragment) {
                     homeFragment.filterList(newText)
                 }
