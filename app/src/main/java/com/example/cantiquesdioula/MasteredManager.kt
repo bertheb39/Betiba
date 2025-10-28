@@ -7,7 +7,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-// Imports Coroutines que nous ajoutons
+// Imports Coroutines
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,18 +35,14 @@ object MasteredManager {
 
     /**
      * Charge les cantiques maîtrisés au démarrage.
-     *
-     * CORRECTION : S'exécute maintenant sur un thread d'arrière-plan (Dispatchers.IO)
-     * pour ne pas bloquer l'interface utilisateur.
+     * (Ton code est bon, pas de changement)
      */
     fun loadMastered(context: Context, onComplete: () -> Unit) {
-        // On lance le travail sur un thread d'arrière-plan
         CoroutineScope(Dispatchers.IO).launch {
             val user = auth.currentUser
             masteredCache.clear()
 
             if (user != null) {
-                // Connecté: Charger depuis Firestore
                 db.collection("users").document(user.uid)
                     .get()
                     .addOnSuccessListener { document ->
@@ -57,23 +53,18 @@ object MasteredManager {
                                 Log.d(TAG, "Maîtrisés chargés depuis Firestore: ${masteredCache.size} éléments.")
                             }
                         }
-                        // Callback sur le thread principal (géré par Firebase)
                         onComplete()
                     }
                     .addOnFailureListener { e ->
                         Log.w(TAG, "Erreur de chargement des 'mastered' Firestore", e)
-                        // Callback sur le thread principal (géré par Firebase)
                         onComplete()
                     }
             } else {
-                // Déconnecté: Charger depuis SharedPreferences
-                // C'est cette opération (I/O) qui bloquait le thread principal
                 val prefs = getLocalPrefs(context)
                 val localStrings = prefs.getStringSet(KEY_LOCAL_MASTERED, emptySet()) ?: emptySet()
                 masteredCache.addAll(localStrings.map { it.toInt() })
                 Log.d(TAG, "Maîtrisés chargés depuis SharedPreferences: ${masteredCache.size} éléments.")
 
-                // On revient sur le thread principal pour appeler le callback
                 withContext(Dispatchers.Main) {
                     onComplete()
                 }
@@ -83,7 +74,10 @@ object MasteredManager {
 
     /**
      * Ajoute un cantique aux maîtrisés.
-     * (Fonction inchangée)
+     *
+     * !! CORRECTION APPLIQUÉE ICI !!
+     * On utilise .set(..., SetOptions.merge()) au lieu de .update()
+     * pour créer le document s'il n'existe pas.
      */
     fun addMastered(context: Context, songId: Int) {
         if (masteredCache.contains(songId)) return
@@ -92,15 +86,19 @@ object MasteredManager {
         val user = auth.currentUser
 
         if (user != null) {
+            // --- DÉBUT DE LA CORRECTION ---
             val userDoc = db.collection("users").document(user.uid)
-            userDoc.update("mastered", FieldValue.arrayUnion(songId))
+
+            // On prépare les données à "fusionner" (merge)
+            // FieldValue.arrayUnion() ajoute l'ID à la liste sans le dupliquer
+            val masteredData = mapOf("mastered" to FieldValue.arrayUnion(songId))
+
+            // On utilise set() avec SetOptions.merge()
+            userDoc.set(masteredData, SetOptions.merge())
                 .addOnFailureListener { e ->
-                    if (e is com.google.firebase.firestore.FirebaseFirestoreException && e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.NOT_FOUND) {
-                        userDoc.set(mapOf("mastered" to listOf(songId)), SetOptions.merge())
-                    } else {
-                        Log.w(TAG, "Erreur 'addMastered' Firestore", e)
-                    }
+                    Log.w(TAG, "Erreur 'addMastered' Firestore avec set/merge", e)
                 }
+            // --- FIN DE LA CORRECTION ---
         } else {
             val prefs = getLocalPrefs(context)
             val localStrings = prefs.getStringSet(KEY_LOCAL_MASTERED, mutableSetOf())?.toMutableSet() ?: mutableSetOf()

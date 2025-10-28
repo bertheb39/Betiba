@@ -14,7 +14,8 @@
         android:background="?attr/colorPrimary"
         app:title="Paramètres"
         app:titleTextColor="@color/white"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <LinearLayout
         android:layout_width="match_parent"

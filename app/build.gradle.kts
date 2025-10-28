@@ -63,7 +63,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")
-    // --- FIN CORRECTION ---
+
+    // Pour le sélecteur de pays et d'indicatif téléphonique
+    implementation("com.hbb20:ccp:2.7.3")
 
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

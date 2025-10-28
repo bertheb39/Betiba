@@ -7,7 +7,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-// Imports Coroutines que nous ajoutons
+// Imports Coroutines
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,21 +35,14 @@ object FavoritesManager {
 
     /**
      * Charge les favoris au démarrage de l'application.
-     * Si connecté: depuis Firestore vers le cache.
-     * Si déconnecté: depuis SharedPreferences vers le cache.
-     * * CORRECTION : S'exécute maintenant sur un thread d'arrière-plan (Dispatchers.IO)
-     * pour ne pas bloquer l'interface utilisateur.
+     * (Ton code est bon, pas de changement)
      */
     fun loadFavorites(context: Context, onComplete: () -> Unit) {
-        // On lance le travail sur un thread d'arrière-plan
         CoroutineScope(Dispatchers.IO).launch {
             val user = auth.currentUser
-            favoritesCache.clear() // Vider le cache avant de charger
+            favoritesCache.clear()
 
             if (user != null) {
-                // Utilisateur connecté : Charger depuis Firestore
-                // L'API Firebase gère son propre thread, mais on l'appelle
-                // depuis le thread IO pour être sûr que l'initialisation ne bloque pas.
                 db.collection("users").document(user.uid)
                     .get()
                     .addOnSuccessListener { document ->
@@ -62,23 +55,18 @@ object FavoritesManager {
                         } else {
                             Log.d(TAG, "Aucun document utilisateur, favoris vides.")
                         }
-                        // Le callback de Firebase est déjà sur le thread principal
                         onComplete()
                     }
                     .addOnFailureListener { e ->
                         Log.w(TAG, "Erreur de chargement des favoris Firestore", e)
-                        // Le callback de Firebase est déjà sur le thread principal
                         onComplete()
                     }
             } else {
-                // Utilisateur déconnecté : Charger depuis SharedPreferences
-                // C'est cette opération (I/O) qui bloquait le thread principal
                 val prefs = getLocalPrefs(context)
                 val localStrings = prefs.getStringSet(KEY_LOCAL_FAVORITES, emptySet()) ?: emptySet()
                 favoritesCache.addAll(localStrings.map { it.toInt() })
                 Log.d(TAG, "Favoris chargés depuis SharedPreferences: ${favoritesCache.size} éléments.")
 
-                // On revient sur le thread principal pour appeler le callback
                 withContext(Dispatchers.Main) {
                     onComplete()
                 }
@@ -88,7 +76,10 @@ object FavoritesManager {
 
     /**
      * Ajoute un favori.
-     * (Fonction inchangée)
+     *
+     * !! CORRECTION APPLIQUÉE ICI !!
+     * On utilise .set(..., SetOptions.merge()) au lieu de .update()
+     * pour créer le document s'il n'existe pas.
      */
     fun addFavorite(context: Context, songId: Int) {
         if (favoritesCache.contains(songId)) return
@@ -97,15 +88,21 @@ object FavoritesManager {
         val user = auth.currentUser
 
         if (user != null) {
+            // --- DÉBUT DE LA CORRECTION ---
             val userDoc = db.collection("users").document(user.uid)
-            userDoc.update("favorites", FieldValue.arrayUnion(songId))
+
+            // On prépare les données à "fusionner" (merge)
+            // FieldValue.arrayUnion() ajoute l'ID à la liste sans le dupliquer
+            val favoriteData = mapOf("favorites" to FieldValue.arrayUnion(songId))
+
+            // On utilise set() avec SetOptions.merge()
+            // Cela crée le document s'il est absent, ou met à jour le champ "favorites" s'il existe.
+            userDoc.set(favoriteData, SetOptions.merge())
                 .addOnFailureListener { e ->
-                    if (e is com.google.firebase.firestore.FirebaseFirestoreException && e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.NOT_FOUND) {
-                        userDoc.set(mapOf("favorites" to listOf(songId)), SetOptions.merge())
-                    } else {
-                        Log.w(TAG, "Erreur 'addFavorite' Firestore", e)
-                    }
+                    // Si même cette opération échoue (ex: pas de réseau), on log l'erreur.
+                    Log.w(TAG, "Erreur 'addFavorite' Firestore avec set/merge", e)
                 }
+            // --- FIN DE LA CORRECTION ---
         } else {
             val prefs = getLocalPrefs(context)
             val localStrings = prefs.getStringSet(KEY_LOCAL_FAVORITES, mutableSetOf())?.toMutableSet() ?: mutableSetOf()
@@ -116,7 +113,8 @@ object FavoritesManager {
 
     /**
      * Retire un favori.
-     * (Fonction inchangée)
+     * (Ton code est bon, pas de changement. .update() est correct ici
+     * car on ne peut pas retirer de favori d'un document qui n'existe pas)
      */
     fun removeFavorite(context: Context, songId: Int) {
         if (!favoritesCache.contains(songId)) return

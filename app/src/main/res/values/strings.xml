@@ -19,11 +19,13 @@
     <string name="menu_donate">Faire un don</string>
     <string name="menu_about">À propos</string>
     <string name="menu_contact">Contactez-nous</string>
+    <string name="menu_logout">Se déconnecter</string>
 
     <string name="auth_login_title">Connexion</string>
-    <string name="auth_email_or_phone_hint">E-mail ou N° de téléphone</string>
+    <string name="auth_email_hint">E-mail</string>
     <string name="auth_password_hint">Mot de passe</string>
     <string name="auth_login_button">Se connecter</string>
+    <string name="auth_login_phone_button">Se connecter avec le numéro de téléphone</string>
     <string name="auth_forgot_password">Mot de passe oublié ?</string>
     <string name="auth_no_account">Je n\'ai pas de compte. S\'inscrire</string>
 
@@ -34,6 +36,31 @@
     <string name="register_button">S\'inscrire</string>
     <string name="register_phone_button">S\'inscrire avec un n° de téléphone</string>
     <string name="register_already_have_account">J\'ai déjà un compte. Se connecter</string>
-    <string name="menu_logout">Se déconnecter</string>
+
+    <string name="phone_auth_enter_number_title">Entrez votre numéro de téléphone</string>
+    <string name="phone_auth_number_hint">Téléphone</string>
+    <string name="phone_auth_send_code_button">Envoyer le code</string>
+    <string name="phone_auth_enter_code_title">Entrez le code reçu par SMS</string>
+    <string name="phone_auth_code_hint">Code à 6 chiffres</string>
+    <string name="phone_auth_verify_button">Vérifier et Se Connecter</string>
+    <string name="phone_auth_resend_code">Renvoyer le code</string>
+    <string name="tab_login">Connexion</string>
+    <string name="tab_register">Inscription</string>
+    <string name="tab_email">Email</string>
+    <string name="tab_phone">Téléphone</string>
+
+    <string name="forgot_password_title">Réinitialiser le mot de passe</string>
+    <string name="forgot_password_message">Entrez votre adresse E-mail.</string>
+    <string name="forgot_password_send">Envoyer</string>
+    <string name="forgot_password_cancel">Annuler</string>
+    <string name="forgot_password_email_hint">Votre e-mail</string>
+    <string name="forgot_password_success">Un e-mail de réinitialisation a été envoyé.</string>
+    <string name="forgot_password_failure">Échec de l\'envoi :</string>
+    <string name="auth_tabs_description">Onglets de connexion et d\'inscription</string>
+   <string name="register_options_tabs_desc">Options d\'inscription</string>
+    <string name="auth_sign_up_bold">S\'INSCRIRE</string>
+    <string name="auth_log_in_bold">SE CONNECTER</string>
+    <string name="auth_go_to_register">Je n\'ai pas de compte. S\'INSCRIRE</string>
+    <string name="auth_go_to_login">J\'ai déjà un compte. SE CONNECTER</string>
 
 </resources>

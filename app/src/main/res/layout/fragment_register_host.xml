@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    tools:context=".RegisterHostFragment">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/tab_register"
+        android:textAppearance="?attr/textAppearanceHeadline5"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"/>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_layout_register_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:tabGravity="fill"
+        app:tabMode="fixed"
+        app:tabTextAppearance="@style/MyCustomTabStyle"
+
+        android:contentDescription="@string/register_options_tabs_desc" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/view_pager_register_options"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/text_go_to_login"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/auth_go_to_login"
+        android:layout_marginTop="8dp"
+        android:paddingVertical="8dp"
+        android:minHeight="48dp"
+        android:textColor="?android:attr/textColorPrimary" />
+
+</LinearLayout>
