@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
 
-    android:descendantFocusability="afterDescendants"
+    android:descendantFocusability="beforeDescendants"
 
     tools:context=".MainActivity">
 
@@ -45,7 +45,6 @@
         android:layout_marginBottom="8dp"
         android:background="@drawable/search_view_background"
         android:theme="@style/CustomSearchViewStyle"
-
         app:iconifiedByDefault="false"
         app:queryHint="Rechercher un Cantique"
         />

@@ -7,15 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 
 class LoginEmailFragment : Fragment() {
 
@@ -23,7 +20,8 @@ class LoginEmailFragment : Fragment() {
     private lateinit var emailEditText: TextInputEditText
     private lateinit var passwordEditText: TextInputEditText
     private lateinit var loginButton: Button
-    private lateinit var forgotPasswordTextView: TextView
+    private lateinit var forgotPasswordText: TextView
+    private var progressBar: ProgressBar? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -31,87 +29,84 @@ class LoginEmailFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_login_email, container, false)
 
-        auth = Firebase.auth
+        auth = FirebaseAuth.getInstance()
 
+        // Liaison des vues avec les IDs corrigés
         emailEditText = view.findViewById(R.id.login_email)
         passwordEditText = view.findViewById(R.id.login_password)
-        loginButton = view.findViewById(R.id.button_login_email)
-        forgotPasswordTextView = view.findViewById(R.id.text_forgot_password)
+        loginButton = view.findViewById(R.id.button_login_email) // ID Corrigé
+        forgotPasswordText = view.findViewById(R.id.text_forgot_password) // ID Corrigé
+
+        // Trouver le ProgressBar dans l'Activity parente (AuthActivity)
+        // Note : L'ID 'auth_progress_bar' doit exister dans 'activity_auth.xml'
+        try {
+            progressBar = activity?.findViewById(R.id.auth_progress_bar)
+        } catch (e: Exception) {
+            Log.e("LoginEmailFragment", "ProgressBar non trouvé dans AuthActivity", e)
+        }
+
 
         loginButton.setOnClickListener {
             val email = emailEditText.text.toString().trim()
             val password = passwordEditText.text.toString().trim()
 
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(requireContext(), "Veuillez remplir tous les champs.", Toast.LENGTH_SHORT).show()
+            if (email.isEmpty()) {
+                emailEditText.error = "Email requis"
+                emailEditText.requestFocus()
                 return@setOnClickListener
             }
+
+            if (password.isEmpty()) {
+                passwordEditText.error = "Mot de passe requis"
+                passwordEditText.requestFocus()
+                return@setOnClickListener
+            }
+
             signInUserWithEmail(email, password)
         }
 
-        forgotPasswordTextView.setOnClickListener {
-            showForgotPasswordDialog()
+        forgotPasswordText.setOnClickListener {
+            Toast.makeText(requireContext(), "Fonctionnalité de réinitialisation à venir.", Toast.LENGTH_SHORT).show()
         }
 
         return view
     }
 
     private fun signInUserWithEmail(email: String, password: String) {
+        showProgressBar()
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(requireActivity()) { task ->
+                hideProgressBar()
                 if (task.isSuccessful) {
                     Log.d("LoginEmailFragment", "signInWithEmail:success")
                     Toast.makeText(requireContext(), "Connexion réussie.", Toast.LENGTH_SHORT).show()
                     navigateToMainActivity()
                 } else {
                     Log.w("LoginEmailFragment", "signInWithEmail:failure", task.exception)
-                    Toast.makeText(requireContext(), "Échec: ${task.exception?.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-    }
-
-    private fun showForgotPasswordDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(getString(R.string.forgot_password_title))
-        builder.setMessage(getString(R.string.forgot_password_message))
-
-        val input = EditText(requireContext())
-        input.hint = getString(R.string.forgot_password_email_hint)
-        input.inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-        builder.setView(input)
-
-        builder.setPositiveButton(getString(R.string.forgot_password_send)) { dialog, _ ->
-            val email = input.text.toString().trim()
-            if (email.isNotEmpty()) {
-                sendPasswordResetEmail(email)
-            } else {
-                Toast.makeText(requireContext(), "Veuillez entrer un e-mail", Toast.LENGTH_SHORT).show()
-            }
-            dialog.dismiss()
-        }
-        builder.setNegativeButton(getString(R.string.forgot_password_cancel)) { dialog, _ ->
-            dialog.cancel()
-        }
-        builder.show()
-    }
-
-    private fun sendPasswordResetEmail(email: String) {
-        auth.sendPasswordResetEmail(email)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Log.d("LoginEmailFragment", "Email de réinitialisation envoyé.")
-                    Toast.makeText(requireContext(), getString(R.string.forgot_password_success), Toast.LENGTH_SHORT).show()
-                } else {
-                    Log.w("LoginEmailFragment", "Erreur envoi e-mail", task.exception)
-                    Toast.makeText(requireContext(), "${getString(R.string.forgot_password_failure)} ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    if(isAdded) { // Vérifie si le fragment est toujours attaché
+                        Toast.makeText(
+                            requireContext(),
+                            "Échec de l'authentification: ${task.exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
     }
 
     private fun navigateToMainActivity() {
+        if (!isAdded) return // Vérifie si le fragment est attaché avant de naviguer
         val intent = Intent(requireActivity(), MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         requireActivity().finish()
+    }
+
+    private fun showProgressBar() {
+        progressBar?.visibility = View.VISIBLE
+    }
+
+    private fun hideProgressBar() {
+        progressBar?.visibility = View.GONE
     }
 }

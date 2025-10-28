@@ -2,22 +2,20 @@ package com.example.cantiquesdioula
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Filter
+import android.widget.Filterable
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.util.ArrayList
 import java.util.Locale
-import android.widget.Filter
-import android.widget.Filterable
 
 class NumberAdapter(
-    private var songs: List<Song> // La liste affichée
+    private var songs: List<Song>
 ) : RecyclerView.Adapter<NumberAdapter.NumberViewHolder>(), Filterable {
 
-    // Garder la liste complète pour le filtrage et les clics
     private var songListFull: List<Song> = ArrayList(songs)
 
     class NumberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -49,23 +47,19 @@ class NumberAdapter(
 
     override fun getItemCount(): Int = songs.size
 
-    // S'assurer que la liste complète est bien à jour
     fun setFullList(fullList: List<Song>) {
         songListFull = ArrayList(fullList)
         songs = ArrayList(fullList)
         notifyDataSetChanged()
     }
 
-    // --- !! C'EST LA FONCTION QUI MANQUAIT !! ---
-    // Elle doit être ICI, à l'intérieur de la classe NumberAdapter
+    // !! FONCTION CORRIGÉE ET PLACÉE À L'INTÉRIEUR DE LA CLASSE !!
     fun updateSongs(newSongs: List<Song>) {
         songs = newSongs
-        songListFull = ArrayList(newSongs) // Met aussi à jour la liste complète pour le filtre
+        songListFull = ArrayList(newSongs)
         notifyDataSetChanged()
     }
-    // --- FIN DE L'AJOUT ---
 
-    // --- Filtrage ---
     override fun getFilter(): Filter {
         return songFilter
     }
@@ -78,6 +72,7 @@ class NumberAdapter(
             } else {
                 val filterPattern = constraint.toString().lowercase(Locale.getDefault()).trim()
                 for (song in songListFull) {
+                    // Note : Le filtre étendu (fullText) sera ajouté sur la branche ImpMelodie
                     if (song.title.lowercase(Locale.getDefault()).contains(filterPattern) ||
                         song.id.toString().contains(filterPattern)) {
                         filteredList.add(song)
@@ -95,5 +90,4 @@ class NumberAdapter(
             notifyDataSetChanged()
         }
     }
-    // L'accolade de fermeture de la classe est ci-dessous
 }

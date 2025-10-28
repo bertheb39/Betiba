@@ -29,52 +29,58 @@ class AllSongsFragment : Fragment(), FilterableFragment {
         recyclerView = view.findViewById(R.id.recycler_view_all_songs)
         progressBar = view.findViewById(R.id.progress_bar_all)
 
+        // Initialiser l'adaptateur avec une liste vide
         songAdapter = SongAdapter(emptyList())
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = songAdapter
 
+        // Lancer le chargement des données
         loadSongsData()
 
         return view
     }
 
     private fun loadSongsData() {
+        // Utiliser 'lifecycleScope.launch' pour un travail asynchrone
         lifecycleScope.launch {
+            // Si les données sont déjà chargées (ex: rotation), on les affiche juste
             if (allSongsList.isNotEmpty()) {
-                songAdapter.setFullList(allSongsList)
-                songAdapter.updateList(allSongsList)
-
+                songAdapter.setFullList(allSongsList) // Met à jour le filtre ET la liste
                 progressBar.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
                 return@launch
             }
 
+            // Afficher le chargement
             progressBar.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
 
+            // Aller sur le Thread IO (Input/Output) pour lire le gros fichier JSON
             val songs = withContext(Dispatchers.IO) {
                 loadSongsFromAssets()
             }
 
+            // Revenir sur le Thread Principal (Main) pour afficher l'interface
             allSongsList = songs
-            songAdapter.setFullList(allSongsList)
-            songAdapter.updateList(allSongsList)
+            songAdapter.setFullList(allSongsList) // Met à jour le filtre ET la liste
 
+            // Cacher le chargement et afficher la liste
             progressBar.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         }
     }
 
-    // Cette fonction est appelée par HomeFragment pour lancer le filtre
+    // Fonction appelée par MainActivity pour lancer le filtre
     override fun filter(query: String?) {
         if (::songAdapter.isInitialized) {
             songAdapter.filter.filter(query)
         }
     }
 
+    // Fonction appelée par MainActivity pour rafraîchir les favoris/maîtrisés
     fun refreshList() {
         if (::songAdapter.isInitialized && isAdded) {
-            songAdapter.notifyDataSetChanged()
+            songAdapter.notifyDataSetChanged() // Force la mise à jour des icônes
         }
     }
 
@@ -82,8 +88,9 @@ class AllSongsFragment : Fragment(), FilterableFragment {
         return try {
             val inputStream = requireContext().assets.open("CAD.json")
             val reader = InputStreamReader(inputStream)
+            // Utilise la structure SongData pour parser le JSON
             val songData = Gson().fromJson(reader, SongData::class.java)
-            songData.songs.sortedBy { it.id }
+            songData.songs.sortedBy { it.id } // S'assurer qu'ils sont triés
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()

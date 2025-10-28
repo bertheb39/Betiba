@@ -5,14 +5,18 @@
     android:layout_height="match_parent"
     tools:context=".AllSongsFragment">
 
+    <ProgressBar
+        android:id="@+id/progress_bar_all"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_all_songs"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" /> <ProgressBar
-    android:id="@+id/progress_bar_all"
-    style="?android:attr/progressBarStyle"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:visibility="visible" /> </FrameLayout>
+    android:id="@+id/recycler_view_all_songs"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:clipToPadding="false"
+    android:visibility="visible" />
+</FrameLayout>

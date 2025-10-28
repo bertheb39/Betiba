@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar // <-- AJOUT
+import android.widget.ProgressBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -20,25 +20,19 @@ class NumbersFragment : Fragment(), FilterableFragment {
     private lateinit var numberAdapter: NumberAdapter
     private var allSongsList: List<Song> = emptyList()
 
-    // --- AJOUT DES RÉFÉRENCES ---
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
-    // --- FIN AJOUT ---
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_numbers, container, false)
 
-        // --- DÉBUT MODIFICATION ---
         recyclerView = view.findViewById(R.id.recycler_view_numbers)
         progressBar = view.findViewById(R.id.progress_bar_numbers)
-        // --- FIN MODIFICATION ---
 
-        // 1. Initialiser l'adaptateur avec une liste VIDE
         numberAdapter = NumberAdapter(emptyList())
         recyclerView.layoutManager = GridLayoutManager(requireContext(), 5)
         recyclerView.adapter = numberAdapter
 
-        // 2. Lancer le chargement des données
         loadSongsData()
 
         return view
@@ -47,33 +41,26 @@ class NumbersFragment : Fragment(), FilterableFragment {
     private fun loadSongsData() {
         lifecycleScope.launch {
             if (allSongsList.isNotEmpty()) {
-                numberAdapter.updateSongs(allSongsList)
-                // --- AJOUT ---
+                numberAdapter.updateSongs(allSongsList) // Utilise la fonction de NumberAdapter
                 progressBar.visibility = View.GONE
                 recyclerView.visibility = View.VISIBLE
-                // --- FIN AJOUT ---
                 return@launch
             }
 
-            // --- AJOUT (Pendant le chargement) ---
             progressBar.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
-            // --- FIN AJOUT ---
 
             val songs = withContext(Dispatchers.IO) {
                 loadSongsFromAssets()
             }
 
             allSongsList = songs
-            numberAdapter.updateSongs(allSongsList)
+            numberAdapter.updateSongs(allSongsList) // Utilise la fonction de NumberAdapter
 
-            // --- AJOUT (Quand le chargement est fini) ---
             progressBar.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
-            // --- FIN AJOUT ---
         }
     }
-
 
     override fun filter(query: String?) {
         if (::numberAdapter.isInitialized) {

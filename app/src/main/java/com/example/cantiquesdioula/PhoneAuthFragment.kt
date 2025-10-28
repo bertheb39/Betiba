@@ -23,20 +23,18 @@ class PhoneAuthFragment : Fragment() {
     private var storedVerificationId: String? = null
     private var resendToken: PhoneAuthProvider.ForceResendingToken? = null
 
-    // Déclaration de TOUTES les vues
+    // Déclaration des vues
     private lateinit var ccp: CountryCodePicker
     private lateinit var editTextPhoneNumberOnly: TextInputEditText
     private lateinit var buttonSendCode: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutSendCode: LinearLayout
     private lateinit var layoutVerifyCode: LinearLayout
-
-    // Vues qui causaient l'erreur
     private lateinit var editTextSmsCode: TextInputEditText
     private lateinit var buttonVerifyCode: Button
     private lateinit var textViewResendCode: TextView
     private lateinit var textViewCodeTitle: TextView
-
+    private lateinit var textViewPhoneTitle: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,20 +44,18 @@ class PhoneAuthFragment : Fragment() {
 
         auth = FirebaseAuth.getInstance()
 
-        // Initialisation de TOUTES les vues
+        // Initialisation des vues (tous les IDs sont maintenant corrects)
         ccp = view.findViewById(R.id.ccp)
         editTextPhoneNumberOnly = view.findViewById(R.id.editTextPhoneNumberOnly)
         buttonSendCode = view.findViewById(R.id.buttonSendCode)
         progressBar = view.findViewById(R.id.progressBar)
         layoutSendCode = view.findViewById(R.id.layout_send_code)
         layoutVerifyCode = view.findViewById(R.id.layout_verify_code)
-
-        // C'est ici que vos erreurs se produisaient.
-        // Ces `findViewById` vont maintenant trouver les ID dans le layout
         editTextSmsCode = view.findViewById(R.id.editTextSmsCode)
         buttonVerifyCode = view.findViewById(R.id.buttonVerifyCode)
         textViewResendCode = view.findViewById(R.id.textViewResendCode)
         textViewCodeTitle = view.findViewById(R.id.textViewCodeTitle)
+        textViewPhoneTitle = view.findViewById(R.id.textViewPhoneTitle)
 
         ccp.registerCarrierNumberEditText(editTextPhoneNumberOnly)
 
@@ -105,13 +101,10 @@ class PhoneAuthFragment : Fragment() {
             .setCallbacks(callbacks)
             .build()
         PhoneAuthProvider.verifyPhoneNumber(options)
-        Log.d("PhoneAuth", "Demande d'envoi du code SMS pour $phoneNumber")
     }
 
     private val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-            Log.d("PhoneAuth", "onVerificationCompleted: ${credential.smsCode}")
             hideProgressBar()
             signInWithPhoneAuthCredential(credential)
         }
@@ -122,7 +115,6 @@ class PhoneAuthFragment : Fragment() {
             if (isAdded) {
                 Toast.makeText(requireContext(), "Échec: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            // Afficher le layout d'envoi, cacher le layout de vérification
             layoutSendCode.visibility = View.VISIBLE
             layoutVerifyCode.visibility = View.GONE
             ccp.isEnabled = true
@@ -133,18 +125,13 @@ class PhoneAuthFragment : Fragment() {
             verificationId: String,
             token: PhoneAuthProvider.ForceResendingToken
         ) {
-            Log.d("PhoneAuth", "onCodeSent: $verificationId")
             storedVerificationId = verificationId
             resendToken = token
             hideProgressBar()
-
-            // Afficher le layout de vérification, cacher le layout d'envoi
             layoutSendCode.visibility = View.GONE
             layoutVerifyCode.visibility = View.VISIBLE
-
             ccp.isEnabled = false
             editTextPhoneNumberOnly.isEnabled = false
-
             if (isAdded) {
                 Toast.makeText(requireContext(), "Code SMS envoyé.", Toast.LENGTH_SHORT).show()
             }
@@ -152,21 +139,18 @@ class PhoneAuthFragment : Fragment() {
     }
 
     private fun verifyCodeAndSignIn(code: String) {
-        if (storedVerificationId != null) {
+        storedVerificationId?.let {
             try {
-                val credential = PhoneAuthProvider.getCredential(storedVerificationId!!, code)
+                val credential = PhoneAuthProvider.getCredential(it, code)
                 signInWithPhoneAuthCredential(credential)
-                Log.d("PhoneAuth", "Tentative de connexion avec le code.")
             } catch (e: Exception) {
                 hideProgressBar()
-                Log.e("PhoneAuth", "Code invalide ou expiré", e)
                 if (isAdded) {
                     Toast.makeText(requireContext(), "Code invalide ou expiré.", Toast.LENGTH_SHORT).show()
                 }
             }
-        } else {
+        } ?: run {
             hideProgressBar()
-            Log.e("PhoneAuth", "storedVerificationId est null")
             if (isAdded) {
                 Toast.makeText(requireContext(), "Erreur interne, veuillez renvoyer le code.", Toast.LENGTH_SHORT).show()
             }
@@ -178,12 +162,9 @@ class PhoneAuthFragment : Fragment() {
             .addOnCompleteListener(requireActivity()) { task ->
                 hideProgressBar()
                 if (task.isSuccessful) {
-                    val user = task.result?.user
-                    Log.d("PhoneAuth", "Connexion réussie: ${user?.uid}")
                     Toast.makeText(requireContext(), "Authentification réussie.", Toast.LENGTH_SHORT).show()
                     navigateToMainActivity()
                 } else {
-                    Log.w("PhoneAuth", "signInWithCredential échec", task.exception)
                     if (isAdded) {
                         Toast.makeText(requireContext(), "Échec: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                     }
@@ -192,22 +173,20 @@ class PhoneAuthFragment : Fragment() {
     }
 
     private fun resendVerificationCode(phoneNumber: String) {
-        if (resendToken != null) {
+        resendToken?.let {
             val options = PhoneAuthOptions.newBuilder(auth)
                 .setPhoneNumber(phoneNumber)
                 .setTimeout(60L, TimeUnit.SECONDS)
                 .setActivity(requireActivity())
                 .setCallbacks(callbacks)
-                .setForceResendingToken(resendToken!!)
+                .setForceResendingToken(it)
                 .build()
             PhoneAuthProvider.verifyPhoneNumber(options)
-            Log.d("PhoneAuth", "Demande de renvoi du code SMS.")
             if (isAdded) {
                 Toast.makeText(requireContext(), "Renvoi du code...", Toast.LENGTH_SHORT).show()
             }
-        } else {
+        } ?: run {
             hideProgressBar()
-            Log.e("PhoneAuth", "resendToken est null")
             if (isAdded) {
                 Toast.makeText(requireContext(), "Impossible de renvoyer le code.", Toast.LENGTH_SHORT).show()
             }
@@ -215,6 +194,7 @@ class PhoneAuthFragment : Fragment() {
     }
 
     private fun navigateToMainActivity() {
+        if (!isAdded) return
         val intent = Intent(requireActivity(), MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
@@ -222,13 +202,12 @@ class PhoneAuthFragment : Fragment() {
     }
 
     private fun showProgressBar() {
-        progressBar.visibility = View.VISIBLE
+        progressBar?.visibility = View.VISIBLE
         layoutSendCode.visibility = View.GONE
         layoutVerifyCode.visibility = View.GONE
     }
 
     private fun hideProgressBar() {
-        progressBar.visibility = View.GONE
-        // Les callbacks gèrent l'affichage des layouts
+        progressBar?.visibility = View.GONE
     }
 }

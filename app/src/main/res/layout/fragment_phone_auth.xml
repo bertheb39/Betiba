@@ -10,127 +10,119 @@
     android:paddingBottom="0dp"
     tools:context=".PhoneAuthFragment">
 
-    <TextView
-        android:id="@+id/textViewPhoneTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/phone_auth_enter_number_title"
-        android:textAppearance="?attr/textAppearanceSubtitle1"
-        android:layout_marginBottom="16dp"/>
-
     <LinearLayout
-        android:id="@+id/layout_phone_input"
+        android:id="@+id/layout_send_code"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="start"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:visibility="visible">
 
-        <com.hbb20.CountryCodePicker
-            android:id="@+id/ccp"
+        <TextView
+            android:id="@+id/textViewPhoneTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:ccp_autoDetectCountry="true"
-            app:ccp_defaultNameCode="BF"
-            app:ccp_countryPreference="BF,CI,ML,GH,TG,NE"
-            app:ccp_showFlag="true"
-            app:ccp_showFullName="true"
-            app:ccp_showPhoneCode="false"
-            app:ccp_showNameCode="false" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editTextPhoneNumberOnly"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/phone_auth_number_hint"
-                android:inputType="phone"
-                android:minHeight="48dp"
-                android:autofillHints="phoneNumberNational"
-                tools:ignore="SpeakableTextPresentCheck" />
-        </com.google.android.material.textfield.TextInputLayout>
-    </LinearLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp">
+            android:text="@string/phone_auth_enter_number_title"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:layout_marginBottom="16dp"/>
 
         <LinearLayout
-            android:id="@+id/layout_send_code"
+            android:id="@+id/layout_phone_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:visibility="visible">
+            android:gravity="start"
+            android:orientation="vertical">
 
-            <Button
-                android:id="@+id/buttonSendCode"
+            <com.hbb20.CountryCodePicker
+                android:id="@+id/ccp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/phone_auth_send_code_button"
-                android:minHeight="48dp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_verify_code"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/textViewCodeTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/phone_auth_enter_code_title"
-                android:textAppearance="?attr/textAppearanceHeadline6" />
+                app:ccp_autoDetectCountry="true"
+                app:ccp_defaultNameCode="BF"
+                app:ccp_countryPreference="BF,CI,ML,GH,TG,NE"
+                app:ccp_showFlag="true"
+                app:ccp_showFullName="true"
+                app:ccp_showPhoneCode="false"
+                app:ccp_showNameCode="false" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginStart="32dp"
                 android:layout_marginEnd="32dp"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextSmsCode"
+                    android:id="@+id/editTextPhoneNumberOnly"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/phone_auth_code_hint"
-                    android:inputType="number"
-                    android:maxLength="6"
+                    android:hint="@string/phone_auth_number_hint"
+                    android:inputType="phone"
                     android:minHeight="48dp"
-                    android:autofillHints="smsOTPCode"
-                    tools:ignore="SpeakableTextPresentCheck" />
+                    android:autofillHints="phoneNumberNational" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <Button
-                android:id="@+id/buttonVerifyCode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/phone_auth_verify_button"
-                android:minHeight="48dp"/>
-
-            <TextView
-                android:id="@+id/textViewResendCode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/phone_auth_resend_code"
-                android:textColor="?attr/colorPrimary"
-                android:padding="8dp"
-                android:minHeight="48dp"/>
         </LinearLayout>
 
-    </FrameLayout>
+        <Button
+            android:id="@+id/buttonSendCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/phone_auth_send_code_button"
+            android:minHeight="48dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_verify_code"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textViewCodeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/phone_auth_enter_code_title"
+            android:textAppearance="?attr/textAppearanceHeadline6" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="32dp"
+            android:layout_marginEnd="32dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextSmsCode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/phone_auth_code_hint"
+                android:inputType="number"
+                android:maxLength="6"
+                android:minHeight="48dp"
+                android:autofillHints="smsOTPCode" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/buttonVerifyCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/phone_auth_verify_button"
+            android:minHeight="48dp"/>
+
+        <TextView
+            android:id="@+id/textViewResendCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/phone_auth_resend_code"
+            android:textColor="?attr/colorPrimary"
+            android:padding="8dp"
+            android:minHeight="48dp"/>
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"
