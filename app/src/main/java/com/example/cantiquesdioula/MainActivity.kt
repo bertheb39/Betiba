@@ -2,13 +2,11 @@ package com.example.cantiquesdioula
 
 import android.os.Bundle
 import android.util.Log
-import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
-import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationBarView
 import com.google.android.material.navigationrail.NavigationRailView
@@ -38,6 +36,7 @@ class MainActivity : AppCompatActivity() {
         bottomNav = findViewById(R.id.bottom_navigation)
         navRail = findViewById(R.id.navigation_rail)
 
+        // Connexion de la barre de recherche
         searchView?.let { setupSearch(it) }
 
         val navigationListener = NavigationBarView.OnItemSelectedListener { item ->
@@ -48,17 +47,15 @@ class MainActivity : AppCompatActivity() {
         bottomNav?.setOnItemSelectedListener(navigationListener)
         navRail?.setOnItemSelectedListener(navigationListener)
 
-        // --- DÉBUT DE LA MODIFICATION ---
-        // Charger les données ET rafraîchir la liste quand c'est terminé
+        // Charger les données utilisateur (Favoris, Maîtrisés) de manière asynchrone
         FavoritesManager.loadFavorites(this) {
             Log.d("MainActivity", "Chargement des favoris terminé.")
-            refreshChildLists() // !! LIGNE AJOUTÉE !!
+            refreshChildLists()
         }
         MasteredManager.loadMastered(this) {
             Log.d("MainActivity", "Chargement des 'maîtrisés' terminé.")
-            refreshChildLists() // !! LIGNE AJOUTÉE !!
+            refreshChildLists()
         }
-        // --- FIN DE LA MODIFICATION ---
 
         if (savedInstanceState == null) {
             handleNavigation(R.id.nav_home)
@@ -72,24 +69,28 @@ class MainActivity : AppCompatActivity() {
         handleNavigationVisibility(selectedItemId)
         updateToolbarTitle(selectedItemId)
 
-        // On rafraîchit aussi au cas où l'utilisateur
-        // aurait changé un favori dans un autre écran
+        // Rafraîchit les listes (pour mettre à jour les icônes) et réapplique le filtre si nécessaire
         refreshChildLists()
     }
 
-    // --- DÉBUT DE LA NOUVELLE FONCTION ---
     // Fonction centralisée pour rafraîchir les listes dans les fragments enfants
     private fun refreshChildLists() {
-        // runOnUiThread force le code à s'exécuter sur le thread principal,
-        // ce qui est obligatoire pour toucher à l'interface
+        // runOnUiThread est crucial car nous sommes probablement appelés depuis un thread de Firestore
         runOnUiThread {
             val fragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
             if (fragment is HomeFragment) {
                 fragment.refreshLists()
+
+                // !! SOLUTION PROBABLE POUR LE BUG DE RECHERCHE PERSISTANT !!
+                // Réapplique le filtre en cours quand la liste est rafraîchie
+                searchView?.let { search ->
+                    if (!search.isIconified) {
+                        fragment.filterList(search.query.toString())
+                    }
+                }
             }
         }
     }
-    // --- FIN DE LA NOUVELLE FONCTION ---
 
     private fun handleNavigation(itemId: Int) {
         handleNavigationVisibility(itemId)
@@ -124,12 +125,15 @@ class MainActivity : AppCompatActivity() {
         searchView?.visibility = if (showSearch) View.VISIBLE else View.GONE
     }
 
+    // Fonction de connexion de la barre de recherche (le cœur du filtrage)
     private fun setupSearch(searchView: SearchView) {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
 
             override fun onQueryTextChange(newText: String?): Boolean {
+                // Cette logique est la clé pour que le filtrage démarre
                 val homeFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+
                 if (homeFragment is HomeFragment) {
                     homeFragment.filterList(newText)
                 }

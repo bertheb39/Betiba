@@ -30,14 +30,16 @@ class HomeFragment : Fragment() {
         return view
     }
 
-    // Fonction qui reçoit le texte de la recherche et le transmet
+    // Fonction qui reçoit le texte de la recherche et le transmet au fragment enfant visible
     fun filterList(query: String?) {
+        // Tente de récupérer le fragment actuellement visible dans le ViewPager
         val fragment = childFragmentManager.fragments.getOrNull(viewPager.currentItem)
+
+        // S'il s'agit d'un fragment filtrable, on appelle sa méthode filter()
         (fragment as? FilterableFragment)?.filter(query)
     }
 
-    // --- AJOUT DE LA FONCTION MANQUANTE ---
-    // Fonction qui rafraîchit les listes dans les onglets (pour les favoris/maîtrisés)
+    // Fonction qui rafraîchit les listes (pour les favoris/maîtrisés)
     fun refreshLists() {
         // On demande à chaque fragment enfant de se rafraîchir
         (childFragmentManager.fragments.find { it is AllSongsFragment } as? AllSongsFragment)?.refreshList()
